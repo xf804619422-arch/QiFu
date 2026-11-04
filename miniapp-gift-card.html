@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>礼品卡 · 小程序端原型</title>
+<style>
+  :root{
+    --bg:#F6EFE3; --bg-soft:#FBF6EC;
+    --surface:#FFFFFF;
+    --ink:#2B1E16; --ink-soft:#5B4637; --muted:#96816C; --faint:#B9A891;
+    --coral:#E8502F; --coral-deep:#C63D1F; --coral-soft:rgba(232,80,47,.10);
+    --gold:#E9A23B; --gold-deep:#C77F1D; --gold-soft:rgba(233,162,59,.15);
+    --green:#3E9B63; --green-soft:rgba(62,155,99,.13);
+    --blue:#3D6BC8; --blue-soft:rgba(61,107,200,.12);
+    --line:rgba(91,70,55,.13); --line-strong:rgba(91,70,55,.22);
+    --nav:#2A1D14; --nav-2:#332318;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+    --sans:"PingFang SC","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--sans);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.6;overflow:hidden}
+
+  .demo-wrap{display:flex;height:100vh}
+
+  /* ============ 左侧模块导航 ============ */
+  .module-nav{width:216px;flex:none;background:linear-gradient(180deg,var(--nav) 0%,var(--nav-2) 100%);color:#F3E9DB;display:flex;flex-direction:column;position:relative;z-index:20}
+  .module-nav:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(300px 200px at 50% 0%,rgba(233,162,59,.14),transparent 70%)}
+  .mn-brand{display:flex;align-items:center;gap:12px;padding:22px 18px 18px;position:relative}
+  .mn-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(150deg,var(--coral),var(--gold));display:grid;place-items:center;color:#fff;font-family:var(--serif);font-weight:900;font-size:20px;flex:none;box-shadow:0 8px 20px rgba(232,80,47,.35)}
+  .mn-brand b{font-family:var(--serif);font-size:16px;letter-spacing:1px;color:#FFF8EE}
+  .mn-brand small{display:block;font-size:10px;color:rgba(243,233,219,.5);letter-spacing:2px;margin-top:1px}
+  .mn-label{padding:6px 20px 8px;font-size:10.5px;color:rgba(243,233,219,.38);letter-spacing:2px;position:relative}
+  .mn-list{flex:1;overflow-y:auto;padding:0 12px 20px;position:relative}
+  .mn-item{display:flex;align-items:center;gap:11px;width:100%;padding:12px 13px;border:none;background:none;color:rgba(243,233,219,.6);font-size:13.5px;font-weight:600;cursor:pointer;border-radius:11px;text-align:left;font-family:inherit;letter-spacing:.5px;transition:all .2s;margin-bottom:4px}
+  .mn-item:hover{background:rgba(255,240,220,.06);color:#FFF8EE}
+  .mn-item .ic{width:18px;height:18px;flex:none;display:grid;place-items:center}
+  .mn-item .ic svg{width:17px;height:17px}
+  .mn-item.active{color:#FFF8EE;background:linear-gradient(90deg,rgba(232,80,47,.24),rgba(232,80,47,.06))}
+  .mn-item.active:before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;border-radius:3px;background:var(--coral)}
+  .mn-item.active .ic{color:var(--coral)}
+  .mn-item .tag{margin-left:auto;font-size:10px;color:rgba(243,233,219,.35);background:rgba(255,240,220,.08);border-radius:999px;padding:2px 8px}
+  .mn-item.active .tag{color:var(--gold);background:rgba(233,162,59,.15)}
+  .mn-foot{padding:15px 18px;border-top:1px solid rgba(255,240,220,.08);font-size:11px;color:rgba(243,233,219,.4);position:relative}
+
+  /* ============ 右侧舞台 ============ */
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;position:relative;overflow:hidden;background:
+    radial-gradient(900px 600px at 20% -10%,rgba(233,162,59,.16),transparent 55%),
+    radial-gradient(800px 600px at 90% 0%,rgba(232,80,47,.10),transparent 52%),
+    var(--bg)}
+
+  /* ============ 手机外框 ============ */
+  .phone{width:375px;height:812px;background:#fff;border-radius:44px;border:10px solid #2B1E16;position:relative;z-index:2;
+    box-shadow:0 40px 80px -30px rgba(43,30,22,.5);overflow:hidden;display:flex;flex-direction:column}
+  .phone .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#2B1E16;border-radius:14px;z-index:30}
+  .phone-screen{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--bg-soft);position:relative}
+  .phone-screen::-webkit-scrollbar{width:0}
+
+  /* 状态栏 */
+  .pstatus{height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bg-soft);font-size:12px;color:var(--ink);position:relative;z-index:20}
+  .pstatus b{font-weight:700}
+
+  /* ============ 通用手机内元素 ============ */
+  .pnav{height:48px;flex:none;display:flex;align-items:center;padding:0 16px;background:var(--bg-soft);position:relative;z-index:20}
+  .pnav .back{width:34px;height:34px;border:none;background:transparent;display:grid;place-items:center;color:var(--ink);cursor:pointer;font-size:20px}
+  .pnav .title{flex:1;text-align:center;font-family:var(--serif);font-size:16px;font-weight:900;letter-spacing:1px}
+  .pnav .act{font-size:13px;color:var(--coral-deep);cursor:pointer;border:none;background:none;font-family:inherit;font-weight:600}
+
+  .screen{display:none;min-height:100%;flex-direction:column}
+  .screen.active{display:flex}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:12px;padding:13px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:all .2s;width:100%}
+  .btn-primary{background:linear-gradient(135deg,var(--coral),var(--coral-deep));color:#fff;box-shadow:0 10px 22px -8px rgba(232,80,47,.55)}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-ghost{background:var(--surface);color:var(--ink-soft);border:1px solid var(--line-strong)}
+  .btn-ghost:active{transform:scale(.98)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ============ 卡面 ============ */
+  .gcard{position:relative;border-radius:18px;padding:18px 18px 16px;color:#fff;overflow:hidden;cursor:pointer;transition:transform .2s;box-shadow:0 12px 28px -12px rgba(43,30,22,.5)}
+  .gcard:active{transform:scale(.98)}
+  .gcard:before{content:"";position:absolute;width:130px;height:130px;border:1.5px solid rgba(255,255,255,.25);border-radius:50%;right:-40px;top:-40px}
+  .gcard:after{content:"";position:absolute;width:90px;height:90px;border:1.5px solid rgba(255,255,255,.18);border-radius:50%;right:-18px;top:-18px}
+  .gcard .gc-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+  .gcard .gc-logo{font-family:var(--serif);font-weight:900;font-size:22px}
+  .gcard .gc-title{font-family:var(--serif);font-weight:900;font-size:17px;letter-spacing:1px;margin-top:18px;position:relative;z-index:2}
+  .gcard .gc-batch{font-size:10.5px;color:rgba(255,255,255,.72);letter-spacing:.5px;margin-top:4px;position:relative;z-index:2}
+  .gcard .gc-face{margin-top:6px;font-family:var(--serif);font-size:30px;font-weight:900;position:relative;z-index:2}
+  .gcard .gc-face span{font-size:16px}
+  .gcard .gc-foot{margin-top:20px;display:flex;align-items:center;justify-content:space-between;font-size:11px;position:relative;z-index:2;color:rgba(255,255,255,.85)}
+  .gcard .gc-remain{text-align:right}
+  .gcard .gc-remain b{display:block;font-size:13px}
+
+  /* 状态标签 */
+  .st{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:999px;font-weight:600;white-space:nowrap}
+  .st:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+  .st-active{color:#2F8A55;background:rgba(62,155,99,.14)}
+  .st-frozen{color:#C63D1F;background:rgba(232,80,47,.14)}
+  .st-expired{color:#9A8A72;background:rgba(150,129,108,.16)}
+  .st-used{color:#5B4637;background:rgba(91,70,55,.12)}
+
+  /* 卡包列表 */
+  .wallet-body{padding:16px 18px 28px;display:flex;flex-direction:column;gap:16px}
+  .wallet-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2px}
+  .wallet-head h2{font-family:var(--serif);font-size:21px;font-weight:900;letter-spacing:1px}
+  .wallet-head span{font-size:12px;color:var(--muted)}
+  .gcard.dim{filter:saturate(.3) brightness(.82)}
+
+  /* TAB 筛选 */
+  .tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:2px}
+  .tab{flex:1;border:none;background:none;padding:8px 0;font-size:12.5px;color:var(--muted);border-radius:9px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s;white-space:nowrap}
+  .tab:hover{color:var(--ink)}
+  .tab.active{background:linear-gradient(135deg,var(--coral),var(--coral-deep));color:#fff;box-shadow:0 4px 10px -3px rgba(232,80,47,.5)}
+
+  /* 空态 */
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 30px;text-align:center}
+  .empty .e-ico{width:76px;height:76px;border-radius:24px;background:linear-gradient(150deg,var(--coral-soft),var(--gold-soft));display:grid;place-items:center;color:var(--coral);margin-bottom:18px}
+  .empty .e-ico svg{width:34px;height:34px}
+  .empty b{font-size:16px;color:var(--ink);display:block;margin-bottom:6px}
+  .empty p{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.7}
+  .empty .btn{max-width:220px}
+
+  /* ============ 分销模块 ============ */
+  .dist-body{padding:16px 18px 30px;display:flex;flex-direction:column;gap:14px}
+
+  /* 悬浮底部操作栏（申请分销员提交） */
+  .sticky-foot{position:sticky;bottom:0;z-index:10;margin:0 -18px -30px;padding:12px 18px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);box-shadow:0 -8px 20px -12px rgba(91,70,55,.25)}
+  .sf-agree{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .sf-agree label{display:inline-flex;align-items:center;gap:4px}
+
+  /* 身份证照片上传 */
+  .id-photo{flex:1;height:96px;border-radius:12px;border:1px dashed var(--line-strong);display:grid;place-items:center;cursor:pointer;font-size:13px;color:var(--ink-soft);transition:all .2s;overflow:hidden}
+  .id-photo:active{transform:scale(.98)}
+  .dist-hero{position:relative;border-radius:18px;padding:20px 18px;color:#fff;overflow:hidden;background:linear-gradient(135deg,#E8502F,#C63D1F);box-shadow:0 12px 28px -12px rgba(232,80,47,.5)}
+  .dist-hero:before{content:"";position:absolute;width:140px;height:140px;border:1.5px solid rgba(255,255,255,.22);border-radius:50%;right:-36px;top:-36px}
+  .dist-hero:after{content:"";position:absolute;width:90px;height:90px;border:1.5px solid rgba(255,255,255,.16);border-radius:50%;right:-14px;top:-14px}
+  .dist-hero .dh-top{display:flex;align-items:center;gap:10px;position:relative;z-index:2}
+  .dist-hero .dh-avatar{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;font-family:var(--serif);font-weight:900;font-size:18px;flex:none}
+  .dist-hero .dh-name{font-size:15px;font-weight:700}
+  .dist-hero .dh-level{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(233,162,59,.3);color:#FFE9C4;font-weight:600}
+  .dist-hero .dh-balance{margin-top:18px;position:relative;z-index:2}
+  .dist-hero .dh-balance span{font-size:12px;color:rgba(255,255,255,.82);display:block}
+  .dist-hero .dh-balance b{font-family:var(--serif);font-size:32px;font-weight:900;letter-spacing:1px}
+  .dist-hero .dh-balance small{font-size:13px;color:rgba(255,255,255,.82);margin-left:4px}
+  .dist-hero .dh-actions{margin-top:16px;display:flex;gap:10px;position:relative;z-index:2}
+  .dist-hero .dh-btn{flex:1;border:none;border-radius:11px;padding:11px 0;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+  .dist-hero .dh-btn.primary{background:#fff;color:var(--coral-deep)}
+  .dist-hero .dh-btn.ghost{background:rgba(255,255,255,.16);color:#fff}
+  .dist-hero .dh-btn:active{transform:scale(.97)}
+
+  .dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dist-cell{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 14px;cursor:pointer;transition:all .2s}
+  .dist-cell:active{transform:scale(.98)}
+  .dist-cell .dc-ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:10px}
+  .dist-cell .dc-ic svg{width:19px;height:19px}
+  .dist-cell b{font-size:14px;color:var(--ink);display:block}
+  .dist-cell span{font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+
+  .dist-sec{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 16px}
+  .dist-sec .ds-title{font-family:var(--serif);font-size:14px;font-weight:900;letter-spacing:.5px;padding:12px 0 4px;display:flex;align-items:center;justify-content:space-between}
+  .dist-sec .ds-title span{font-family:var(--sans);font-size:11.5px;font-weight:400;color:var(--muted)}
+  .dist-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .dist-row:last-child{border-bottom:none}
+  .dist-row .k{color:var(--muted)}
+  .dist-row .v{font-weight:600;color:var(--ink);text-align:right;max-width:64%}
+  .dist-row .v.mono{font-family:ui-monospace,"SF Mono","Consolas",monospace;font-size:12px}
+
+  /* 分销表单 */
+  .df-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .df-field label{font-size:13px;color:var(--ink);font-weight:600}
+  .df-field label .req{color:var(--coral);font-weight:700}
+  .df-field label .hint{font-weight:400;color:var(--faint);font-size:11px;margin-left:4px}
+  .df-field input,.df-field textarea{width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:11px;font-size:13.5px;color:var(--ink);background:var(--surface);font-family:inherit;transition:border-color .2s,box-shadow .2s}
+  .df-field input:focus,.df-field textarea:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px var(--coral-soft)}
+  .df-field textarea{resize:none;min-height:70px}
+  .df-field .err{font-size:11.5px;color:var(--coral);display:none}
+  .df-field.error input,.df-field.error textarea{border-color:var(--coral)}
+  .df-field.error .err{display:block}
+  .df-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 16px}
+
+  /* 报备状态标签（小程序内） */
+  .dst{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:999px;font-weight:600;white-space:nowrap}
+  .dst:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+  .dst-follow{color:var(--gold-deep);background:var(--gold-soft)}
+  .dst-deal{color:var(--green);background:var(--green-soft)}
+  .dst-invalid{color:var(--muted);background:rgba(150,129,108,.14)}
+  .dst-wait{color:var(--coral-deep);background:var(--coral-soft)}
+
+  /* 佣金明细 */
+  .comm-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)}
+  .comm-item:last-child{border-bottom:none}
+  .comm-item .ci-left{display:flex;flex-direction:column;gap:3px}
+  .comm-item .ci-no{font-size:12.5px;color:var(--ink-soft);font-weight:600;font-family:ui-monospace,"SF Mono","Consolas",monospace}
+  .comm-item .ci-ent{font-size:11.5px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .comm-item .ci-amt{font-family:var(--serif);font-weight:700;color:var(--coral-deep);font-size:14px}
+  .comm-item .ci-rate{font-size:11px;color:var(--gold-deep)}
+
+  /* 客户详情：跟进记录与成交记录 */
+  .fu-item{background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+  .fu-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .fu-time{font-size:11px;color:var(--faint)}
+  .fu-del{font-size:11px;color:var(--coral-deep);cursor:pointer}
+  .fu-img{height:80px;border-radius:8px;display:grid;place-items:center;color:#fff;font-size:12px;margin-bottom:8px}
+  .fu-text{font-size:13px;color:var(--ink-soft);line-height:1.7}
+  .fu-add{border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
+  .fu-add textarea{width:100%;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;font-size:13px;color:var(--ink);background:var(--surface);font-family:inherit;resize:vertical;min-height:64px}
+  .fu-add textarea:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px var(--coral-soft)}
+  .deal-item{background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:6px 12px;margin-bottom:10px}
+  .deal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .deal-row:last-child{border-bottom:none}
+  .deal-row .k{color:var(--muted)}
+  .deal-row .v{font-weight:600;color:var(--ink);text-align:right}
+
+  /* 提现 */
+  .wd-balance{background:linear-gradient(135deg,#3A2A1E,#2B1E16);border-radius:16px;padding:18px;color:#fff;text-align:center}
+  .wd-balance span{font-size:12px;color:rgba(255,255,255,.7)}
+  .wd-balance b{font-family:var(--serif);font-size:30px;font-weight:900;display:block;margin-top:4px}
+  .wd-balance small{font-size:12px;color:rgba(255,255,255,.6)}
+
+  .dist-empty{text-align:center;padding:40px 20px;color:var(--faint)}
+  .dist-empty .e-ico{width:64px;height:64px;border-radius:20px;background:var(--gold-soft);display:grid;place-items:center;color:var(--gold-deep);margin:0 auto 14px}
+  .dist-empty .e-ico svg{width:28px;height:28px}
+  .dist-empty b{display:block;color:var(--ink-soft);font-size:14px;margin-bottom:4px}
+  .dist-empty p{font-size:12.5px;color:var(--muted)}
+
+  /* ============ 模拟审核悬浮按钮 ============ */
+  .sim-audit{position:absolute;right:20px;bottom:20px;z-index:40;display:flex;flex-direction:column;gap:10px}
+  .sim-audit .sa-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;border:1px solid rgba(91,70,55,.22);background:rgba(255,255,255,.92);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 8px 22px -8px rgba(91,70,55,.45);transition:transform .2s,box-shadow .2s;font-family:inherit}
+  .sim-audit .sa-btn:hover{transform:translateY(-2px)}
+  .sim-audit .sa-btn svg{width:16px;height:16px;color:var(--coral)}
+  .sim-audit .sa-btn.primary{background:linear-gradient(135deg,var(--coral),var(--coral-deep));color:#fff;border-color:transparent;box-shadow:0 10px 24px -8px rgba(232,80,47,.6)}
+  .sim-audit .sa-btn.primary svg{color:#fff}
+  .sim-audit .sa-hint{font-size:11px;color:var(--faint);text-align:center;max-width:150px}
+
+  /* ============ 审核驳回弹窗 ============ */
+  .modal-mask{position:fixed;inset:0;z-index:90;background:rgba(43,30,22,.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-mask.open{display:flex}
+  .modal{width:min(420px,100%);max-height:90vh;background:var(--surface);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 40px 90px -30px rgba(43,30,22,.5)}
+  .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .modal-head h2{font-family:var(--serif);font-size:18px;letter-spacing:1px}
+  .modal-head .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .modal-close{width:32px;height:32px;border:none;background:var(--bg-soft);border-radius:10px;font-size:20px;color:var(--muted);cursor:pointer;line-height:1}
+  .modal-close:hover{background:var(--coral-soft);color:var(--coral)}
+  .modal-body{padding:20px;overflow-y:auto}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:flex-end;gap:10px;background:var(--bg-soft)}
+  .btn-danger{background:linear-gradient(135deg,var(--coral-deep),var(--coral));color:#fff;box-shadow:0 8px 18px -8px rgba(232,80,47,.55)}
+  .btn-danger:active{transform:scale(.98)}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:13px;color:var(--ink);font-weight:600}
+  .field label .req{color:var(--coral);font-weight:700}
+  .field textarea{width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:11px;font-size:13.5px;color:var(--ink);background:var(--surface);font-family:inherit;resize:vertical;min-height:80px}
+  .field textarea:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px var(--coral-soft)}
+  .field .err{font-size:11.5px;color:var(--coral);display:none}
+  .field.error textarea{border-color:var(--coral)}
+  .field.error .err{display:block}
+
+
+
+  /* ============ 扫码页 ============ */
+  .scan-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:26px 24px 30px}
+  .scan-frame{width:230px;height:230px;border-radius:20px;position:relative;overflow:hidden;background:#1c130d;box-shadow:inset 0 0 60px rgba(0,0,0,.6)}
+  .scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);box-shadow:0 0 12px var(--gold);animation:scan 2.2s ease-in-out infinite}
+  @keyframes scan{0%,100%{top:12%}50%{top:88%}}
+  .scan-corner{position:absolute;width:26px;height:26px;border:3px solid var(--gold);border-radius:4px}
+  .scan-corner.tl{top:14px;left:14px;border-right:none;border-bottom:none}
+  .scan-corner.tr{top:14px;right:14px;border-left:none;border-bottom:none}
+  .scan-corner.bl{bottom:14px;left:14px;border-right:none;border-top:none}
+  .scan-corner.br{bottom:14px;right:14px;border-left:none;border-top:none}
+  .scan-tip{margin-top:22px;font-size:13px;color:var(--muted)}
+  .scan-act{margin-top:30px;width:100%;max-width:260px}
+
+  /* 确认激活卡片 */
+  .confirm-card{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 18px;box-shadow:var(--shadow,0 10px 30px -18px rgba(91,70,55,.25))}
+  .confirm-card .cc-title{font-family:var(--serif);font-size:16px;font-weight:900;text-align:center;margin-bottom:16px}
+  .cc-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .cc-row:last-of-type{border-bottom:none}
+  .cc-row .k{color:var(--muted)}
+  .cc-row .v{font-weight:600;color:var(--ink);text-align:right}
+  .cc-row .v.mono{font-family:ui-monospace,"SF Mono","Consolas",monospace;font-size:12px}
+
+  /* 成功态 */
+  .success-ico{width:86px;height:86px;border-radius:50%;background:var(--green-soft);display:grid;place-items:center;color:var(--green);margin:26px auto 18px;animation:pop .5s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .success-ico svg{width:40px;height:40px}
+
+  /* ============ 卡详情 ============ */
+  .detail-body{padding:16px 18px 28px}
+  .detail-face{margin-bottom:16px}
+  .info-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 16px;margin-bottom:14px}
+  .info-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .info-row:last-child{border-bottom:none}
+  .info-row .k{color:var(--muted)}
+  .info-row .v{font-weight:600;color:var(--ink);text-align:right;max-width:60%}
+  .info-row .v.mono{font-family:ui-monospace,"SF Mono","Consolas",monospace;font-size:12px}
+  .sec-title{font-family:var(--serif);font-size:15px;font-weight:900;letter-spacing:.5px;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between}
+  .sec-title span{font-family:var(--sans);font-size:12px;font-weight:400;color:var(--muted)}
+  .rec-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .rec-item:last-child{border-bottom:none}
+  .rec-item .r-left{display:flex;flex-direction:column;gap:2px}
+  .rec-item .r-no{color:var(--ink-soft);font-weight:600}
+  .rec-item .r-time{color:var(--faint);font-size:11px}
+  .rec-item .r-amt{font-family:var(--serif);font-weight:700;color:var(--coral-deep)}
+
+  /* Toast */
+  #toast{position:fixed;left:50%;bottom:40px;transform:translate(-50%,20px);z-index:100;background:rgba(43,30,22,.94);color:#FFF6EA;padding:11px 22px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;letter-spacing:.5px;max-width:80vw}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ============ 需求文档 ============ */
+  .doc-toggle{position:fixed;right:20px;bottom:20px;z-index:60;display:inline-flex;align-items:center;gap:8px;padding:13px 16px;border-radius:12px;border:1px solid rgba(91,70,55,.2);background:rgba(255,255,255,.85);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 6px 20px -8px rgba(91,70,55,.4);transition:transform .2s,box-shadow .2s}
+  .doc-toggle:hover{transform:translateY(-2px)}
+  .doc-toggle svg{width:16px;height:16px;color:var(--coral)}
+  .doc-backdrop{position:fixed;inset:0;z-index:70;background:rgba(43,30,22,.4);opacity:0;pointer-events:none;transition:opacity .3s}
+  .doc-backdrop.open{opacity:1;pointer-events:auto}
+  .doc-panel{position:fixed;top:0;right:0;bottom:0;z-index:80;width:min(480px,92vw);background:var(--surface);box-shadow:-24px 0 60px rgba(43,30,22,.22);transform:translateX(102%);transition:transform .38s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+  .doc-panel.open{transform:translateX(0)}
+  .doc-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .doc-head h3{font-family:var(--serif);font-size:17px;letter-spacing:1px}
+  .doc-head .actions{display:flex;gap:8px}
+  .doc-head button{border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:8px 12px;font-size:12px;color:var(--ink-soft);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;white-space:nowrap}
+  .doc-head button:hover{border-color:var(--coral);color:var(--coral)}
+  .doc-head .close{width:34px;height:34px;padding:0;justify-content:center;font-size:18px;flex:none}
+  .doc-body{padding:22px;overflow-y:auto;flex:1;font-size:13.5px;color:var(--ink-soft)}
+  .doc-body h1{font-family:var(--serif);font-size:19px;color:var(--ink);margin:4px 0 14px}
+  .doc-body h2{font-family:var(--serif);font-size:15.5px;color:var(--ink);margin:22px 0 9px;padding-left:10px;border-left:3px solid var(--coral)}
+  .doc-body p{margin:7px 0;line-height:1.85}
+  .doc-body ul,.doc-body ol{margin:7px 0 7px 20px;line-height:1.85}
+  .doc-body table{width:100%;border-collapse:collapse;margin:11px 0;font-size:12px;line-height:1.55}
+  .doc-body th{background:#F6E7CF;color:var(--ink);font-weight:700;text-align:left;border:1px solid var(--line-strong);padding:7px 9px}
+  .doc-body td{border:1px solid var(--line-strong);padding:7px 9px;vertical-align:top}
+  .doc-body code{background:#F6E7CF;border-radius:5px;padding:1px 6px;font-size:11.5px;color:var(--coral-deep)}
+
+  @media(max-width:900px){
+    body{overflow:auto}
+    .demo-wrap{flex-direction:column;height:auto}
+    .module-nav{width:100%;flex-direction:row;align-items:center;padding:0 12px;height:54px;flex:none}
+    .mn-brand{padding:0}
+    .mn-brand small,.mn-label,.mn-foot{display:none}
+    .mn-list{display:flex;gap:4px;padding:0;overflow-x:auto}
+    .mn-item{padding:8px 12px;font-size:12px;margin:0;white-space:nowrap;width:auto}
+    .mn-item .tag{display:none}
+    .stage{padding:18px 0}
+    .phone{width:375px;height:812px;flex:none}
+    .sim-audit{right:10px;bottom:10px}
+    .sim-audit .sa-btn{padding:10px 12px;font-size:12px}
+    .sim-audit .sa-hint{display:none}
+  }
+  @media(max-width:420px){
+    .stage{padding:0}
+    .phone{width:100%;height:100vh;border-radius:0;border:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .scan-line{animation:none}
+    .success-ico{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="demo-wrap">
+  <!-- 左侧模块导航 -->
+  <aside class="module-nav">
+    <div class="mn-brand">
+      <div class="mn-mark">影</div>
+      <div><b>小影云企福</b><small>小程序端原型</small></div>
+    </div>
+    <div class="mn-label">功能模块</div>
+    <nav class="mn-list">
+      <button class="mn-item active" data-mod="gift">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span>
+        礼品卡
+        <span class="tag">已实现</span>
+      </button>
+      <button class="mn-item" data-mod="distribution">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><path d="M16 3.5a3 3 0 0 1 0 7"/><path d="M21 21v-1a6 6 0 0 0-4-5.6"/></svg></span>
+        分销
+        <span class="tag">已实现</span>
+      </button>
+      <button class="mn-item" data-soon data-mod="supermarket">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-3h16l1 3"/><path d="M4 9h16v10H4z"/><path d="M8 9v10"/></svg></span>
+        商超接入
+        <span class="tag">待建设</span>
+      </button>
+      <button class="mn-item" data-soon data-mod="rights">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 7.7l5.4-.8z"/></svg></span>
+        权益
+        <span class="tag">待建设</span>
+      </button>
+    </nav>
+    <div class="mn-foot">小影云企福商城 · 小程序原型</div>
+  </aside>
+
+  <!-- 右侧舞台 -->
+  <div class="stage">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="pstatus"><span>9:41</span><b>企福小程序</b><span>🔔</span></div>
+      <div class="phone-screen" id="phoneScreen">
+
+        <!-- ========== 页面1：卡包 ========== -->
+        <section class="screen active" id="scr-wallet">
+          <div class="pnav">
+            <span class="back" style="visibility:hidden">‹</span>
+            <span class="title">我的礼品卡</span>
+            <button class="act" id="btnScanEntry">扫码</button>
+          </div>
+          <div class="wallet-body" id="walletBody"></div>
+        </section>
+
+        <!-- ========== 页面2：扫码绑定激活 ========== -->
+        <section class="screen" id="scr-scan">
+          <div class="pnav">
+            <button class="back" data-back="scr-wallet">‹</button>
+            <span class="title">扫码绑定</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="scan-body" id="scanBody"></div>
+        </section>
+
+        <!-- ========== 页面3：卡详情 ========== -->
+        <section class="screen" id="scr-detail">
+          <div class="pnav">
+            <button class="back" data-back="scr-wallet">‹</button>
+            <span class="title">卡详情</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="detail-body" id="detailBody"></div>
+        </section>
+
+        <!-- ============ 分销模块 ============ -->
+        <!-- 分销中心首页 -->
+        <section class="screen" id="scr-dist-home">
+          <div class="pnav">
+            <span class="back" style="visibility:hidden">‹</span>
+            <span class="title">分销中心</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distHomeBody"></div>
+        </section>
+
+        <!-- 申请成为分销员 -->
+        <section class="screen" id="scr-dist-apply">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-home">‹</button>
+            <span class="title">申请成为分销员</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distApplyBody"></div>
+        </section>
+
+        <!-- 报备客户 -->
+        <section class="screen" id="scr-dist-report">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-home">‹</button>
+            <span class="title">报备客户</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distReportBody"></div>
+        </section>
+
+        <!-- 我的客户 -->
+        <section class="screen" id="scr-dist-customers">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-home">‹</button>
+            <span class="title">我的客户</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distCustomersBody"></div>
+        </section>
+
+        <!-- 报备审核 -->
+        <section class="screen" id="scr-dist-report-audit">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-home">‹</button>
+            <span class="title">报备审核</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distReportAuditBody"></div>
+        </section>
+
+        <!-- 我的佣金 -->
+        <section class="screen" id="scr-dist-commission">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-home">‹</button>
+            <span class="title">我的佣金</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distCommissionBody"></div>
+        </section>
+
+        <!-- 发起提现 -->
+        <section class="screen" id="scr-dist-withdraw">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-home">‹</button>
+            <span class="title">发起提现</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distWithdrawBody"></div>
+        </section>
+
+        <!-- 个人中心 -->
+        <section class="screen" id="scr-dist-profile">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-home">‹</button>
+            <span class="title">个人中心</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distProfileBody"></div>
+        </section>
+
+        <!-- 客户详情 -->
+        <section class="screen" id="scr-dist-customer-detail">
+          <div class="pnav">
+            <button class="back" data-back="scr-dist-customers">‹</button>
+            <span class="title">客户详情</span>
+            <span class="act" style="visibility:hidden">占位</span>
+          </div>
+          <div class="dist-body" id="distCustomerDetailBody"></div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- 模拟审核悬浮按钮（演示后台审核流程） -->
+    <div class="sim-audit" id="simAudit">
+      <button class="sa-btn primary" id="btnSimApprove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        模拟审核通过
+      </button>
+      <button class="sa-btn" id="btnSimReject" style="border-color:rgba(198,61,31,.4);color:var(--coral-deep)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+        模拟审核驳回
+      </button>
+      <button class="sa-btn" id="btnSimReset">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        重置为未申请
+      </button>
+      <div class="sa-hint">演示后台「分销员审核」：未申请 → 提交申请 → 待审核 → 通过 / 驳回</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模拟审核驳回弹窗 -->
+<div class="modal-mask" id="simRejectMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h2>审核驳回</h2><div class="sub">模拟后台驳回分销员申请</div></div>
+      <button class="modal-close" id="simRejectClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field" id="simRejectField">
+        <label>驳回原因 <span class="req">*</span></label>
+        <textarea id="simRejectReason" placeholder="请填写驳回原因，将展示给申请人"></textarea>
+        <span class="err">请填写驳回原因</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="simRejectCancel">取消</button>
+      <button class="btn btn-danger" id="simRejectConfirm">确认驳回</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分销协议弹窗 -->
+<div class="modal-mask" id="agreementMask">
+  <div class="modal" style="width:min(440px,100%)">
+    <div class="modal-head">
+      <div><h2>分销协议</h2></div>
+      <button class="modal-close" id="agreementClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="agreementBody" style="font-size:13px;line-height:1.9;color:var(--ink-soft);white-space:pre-line"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="agreementClose2">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 需求文档 -->
+<button class="doc-toggle" id="docToggle">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+  需求文档
+</button>
+<div class="doc-backdrop" id="docBackdrop"></div>
+<aside class="doc-panel" id="docPanel">
+  <div class="doc-head">
+    <h3>需求文档 <small id="docCurName" style="font-family:var(--sans);font-size:12px;font-weight:400;color:var(--muted);margin-left:6px"></small></h3>
+    <div class="actions">
+      <button id="copyMd">复制 Markdown</button>
+      <button id="copyRich">复制富文本</button>
+      <button class="close" id="docClose">×</button>
+    </div>
+  </div>
+  <div class="doc-body" id="docBody"></div>
+</aside>
+
+<div id="toast"></div>
+
+<script type="text/plain" id="req-md-gift">
+# 礼品卡模块（卡包 / 扫码绑定 / 卡详情） · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 礼品卡模块（小程序端） |
+| 所属端 | 小程序端 · 礼品卡 → 卡包 / 扫码绑定 / 卡详情 |
+| 核心目标 | 面向企业员工用户，提供礼品卡的「卡包查看、扫码绑定激活、卡详情（剩余金额/有效期/适用范围/消费记录）」能力，与后台礼品卡逻辑对齐。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 说明 | 数据来源 |
+| --- | --- | --- | --- |
+| 卡面（logo/标题/面值） | 图片+文本 | 批次生成时配置 | 后台批次数据 |
+| 批次号 | 文本 | 卡面展示 | 后台批次数据 |
+| 剩余金额 | 数字 | 面值 − 已消费金额 | 后台消费回写 |
+| 状态 | 枚举 | 已激活/挂失冻结/已过期/已用尽 | 后台状态机 |
+| 激活方式 | 枚举 | 系统分发 / 用户激活 | 后台记录 |
+| 激活时间 | 时间 | 仅已激活后有值 | 后台记录 |
+| 有效期 | 日期 | 可延长 | 后台批次/延长 |
+| 适用范围 | 文本 | 全部商品 / 指定分类 | 后台批次配置 |
+| 消费记录 | 列表 | 订单号/时间/金额 | 消费后生成 |
+
+## 3. 数据来源（业务层面）
+
+- 卡面、批次号、面值、有效期、适用范围由后台礼品卡批次配置下发。
+- 剩余金额由后台消费回写；状态由后台状态机维护；激活方式与激活时间由后台记录。
+- 消费记录在用户使用礼品卡线上抵扣后生成。
+
+## 4. 功能与交互逻辑
+
+- 卡包：顶部 TAB 按状态筛选（全部/可用/已冻结/已过期/已用尽）；点击卡进入卡详情；右上角「扫码」进入扫码绑定；空态引导扫码。
+- 状态展示：已激活→「可用」、挂失冻结→「已冻结」（置灰）、已过期/已用尽→置灰；未激活卡不展示（用户未绑定）。
+- 卡面：展示 logo、标题、批次号、面值、剩余金额、有效期。
+- 扫码绑定：扫码后自动带入卡号+密码（密码打码显示，不直接展示明文），用户点「确认激活」完成激活（激活方式=用户激活）。
+- 卡详情：展示卡面、剩余金额、有效期、适用范围、消费记录。
+- 使用卡：礼品卡仅支持线上抵扣，与电商链路对接，本模块原型不单独体现核销。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 左侧模块「礼品卡」 | 点击 | 卡包 |
+| 卡包「扫码」 | 点击 | 扫码绑定 |
+| 扫码绑定「确认激活」 | 点击 | 激活成功 → 卡包 |
+| 卡包卡片 | 点击 | 卡详情 |
+| 卡详情「返回」 | 点击 | 卡包 |
+
+## 6. 边界与状态
+
+- 空态：无卡时展示扫码引导。
+- 已冻结/已过期/已用尽：卡置灰，不可用，详情仍可查看。
+- 扫码失败：提示「二维码无效或已被激活」。
+- 与后台对齐：系统分发的卡直接出现在卡包，无需扫码；用户激活的卡通过扫码激活。
+</script>
+
+<script type="text/plain" id="req-md-dist-home">
+# 分销中心 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 分销中心 |
+| 所属端 | 小程序端 · 分销 → 分销中心 |
+| 核心目标 | 作为分销模块的入口页，按用户的「分销员资格状态」展示不同内容：未申请引导申请、待审核展示审核进度、已驳回展示原因并可重新申请、已通过展示分销员身份与功能入口。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 分销员姓名 | 文本 | 系统 | 登录态 | 林晚晴 | 小程序登录态 |
+| 手机号 | 文本 | 系统带出 | 11 位 | 138****0012 | 小程序登录态 |
+| 分销员资格状态 | 枚举 | 系统 | 未申请 / 待审核 / 已通过 / 已驳回 | 未申请 | 申请与后台审核 |
+| 分销员等级 | 枚举 | 系统 | 普通 / 银牌 / 金牌 | 金牌 | 后台等级规则 |
+| 当前佣金比例 | 百分比 | 系统 | 按等级取分销配置比例 | 10% | 分销配置等级规则 |
+| 可提现余额 | 金额 | 系统 | 累计提成 − 已提现 − 提现中 | ¥30,800 | 后台累计提成 |
+
+## 3. 数据来源（业务层面）
+
+- 姓名、手机号取自小程序登录账号。
+- 资格状态、等级、累计提成来自后台分销员管理与分销配置规则；可提现余额 = 累计提成 − 已提现 − 提现中。
+
+## 4. 功能与交互逻辑
+
+- 未申请：展示「申请分销员」引导与分销员权益说明，点击「立即申请」进入申请页。
+- 待审核：展示「申请审核中」与已提交的申请资料（姓名、身份证号、收款银行卡、开户行、开户名、说明）。
+- 已驳回：展示「申请未通过」、驳回原因与完整申请资料，可点「重新申请」修改后再次提交。
+- 已通过：展示分销员身份（等级标签含当前佣金比例 X%）、可提现余额、快捷入口（报备客户 / 我的佣金 / 发起提现 / 个人中心）与我的客户列表。
+- 「我的客户」模块：「全部」入口位于模块标题右侧，列表展示最近 5 个已生效客户，点击客户进入客户详情。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 左侧模块「分销」 | 点击 | 分销中心 |
+| 分销中心「立即申请 / 重新申请」 | 点击 | 申请成为分销员 |
+| 分销中心「报备客户」 | 点击 | 报备审核页 |
+| 分销中心「我的佣金」 | 点击 | 我的佣金 |
+| 分销中心「发起提现」 | 点击 | 发起提现 |
+| 分销中心「个人中心」 | 点击 | 个人中心 |
+| 分销中心「我的客户」客户行 | 点击 | 客户详情 |
+
+## 6. 边界与状态
+
+- 资格状态流转：未申请 →（提交申请）待审核 →（后台审核通过）已通过，或 →（后台审核驳回）已驳回 →（重新申请）待审核。
+- 空态：我的客户为空时展示「暂无客户」。
+- 演示辅助：右下角「模拟审核通过 / 模拟审核驳回 / 重置为未申请」用于演示后台审核流程。
+</script>
+
+<script type="text/plain" id="req-md-dist-apply">
+# 申请成为分销员 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 申请成为分销员 |
+| 所属端 | 小程序端 · 分销 → 申请成为分销员 |
+| 核心目标 | 收集员工的分销员入驻申请资料（实名信息与收款银行卡），提交后进入后台审核。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 姓名 | 文本 | 必填 | 2–20 字符 | 林晚晴 | 登录态自动带出，可修改 |
+| 身份证号码 | 文本 | 必填 | 18 位 | 430102199003154321 | 用户填写 |
+| 身份证照片 | 图片 | 必填 | 人像面 + 国徽面 | — | 用户上传 |
+| 收款银行卡号 | 文本 | 必填 | 纯数字 | 6222021900012345 | 用户填写 |
+| 开户行 | 文本 | 必填 | 银行名称 | 中国工商银行 | 用户填写 |
+| 开户名 | 文本 | 必填 | 与姓名一致 | 林晚晴 | 用户填写 |
+| 说明 | 文本 | 可选 | ≤ 200 字符 | 曾负责企业客户采购 | 用户填写 |
+| 手机号 | 文本 | 系统带出 | 11 位 | 138****0012 | 登录态自动带出，不可改 |
+| 已阅读分销协议 | 布尔 | 必填 | 勾选后才能提交 | 未勾选 | 用户勾选 |
+
+## 3. 数据来源（业务层面）
+
+- 姓名与手机号由小程序登录态自动带出；其余字段由用户填写。
+- 分销协议文本由后台「分销配置」下发，申请页展示，用户需勾选「已阅读并同意」。
+- 提交后申请进入后台「分销员审核」队列，等待运营审核。
+
+## 4. 功能与交互逻辑
+
+- 表单校验：姓名、身份证、银行卡号、开户行、开户名、身份证照片（人像面 + 国徽面）必填；身份证号必须为 18 位；不通过时 Toast 提示。
+- 「分销协议」：协议内容不常驻页面，通过底部悬浮操作栏的「我已阅读并同意《分销协议》」展示；点击高亮的《分销协议》文字弹出协议内容弹窗。
+- 底部悬浮操作栏：协议勾选 + 「提交申请」按钮固定于屏幕底部，不随表单滚动。
+- 「提交申请」：必填项与协议勾选均通过后保存申请资料，状态改为「待审核」，返回分销中心并展示审核中。
+- 已驳回后再次进入本页时，表单回填上次提交的资料，便于修改后重新提交。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 分销中心「立即申请 / 重新申请」 | 点击 | 本页 |
+| 本页「提交申请」 | 点击 | 提交成功 → 分销中心（待审核） |
+| 本页「返回」 | 点击 | 分销中心 |
+
+## 6. 边界与状态
+
+- 必填项未填：Toast 提示「请填写必填项」。
+- 身份证号非 18 位：Toast 提示「请输入 18 位身份证号码」。
+- 未勾选分销协议：Toast 提示「请先阅读并勾选同意分销协议」，阻止提交。
+- 提交成功后状态置为待审核，后台审核通过 / 驳回后状态再流转。
+</script>
+
+<script type="text/plain" id="req-md-dist-report">
+# 报备客户 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 报备客户 |
+| 所属端 | 小程序端 · 分销 → 报备客户 |
+| 核心目标 | 分销员填写并提交企业客户报备（提交后进入后台审核），理解保护期与成交绑定关系。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 客户企业 / 单位名称 | 文本 | 必填 | 唯一（先报先得） | 长沙星耀文化传媒有限公司 | 用户填写 |
+| 统一社会信用代码 | 文本 | 必填 | 18 位，唯一 | 91430102MA4Q5YN29X | 用户填写 |
+| 联系人 | 文本 | 可选 | ≤ 50 字符 | 陈经理 | 用户填写 |
+| 联系电话 | 文本 | 可选 | 11 位 | 13807310001 | 用户填写 |
+| 意向金额 / 预算 | 金额 | 可选 | ≥ 0 | ¥120,000 | 用户填写 |
+| 备注 | 文本 | 可选 | ≤ 200 字符 | — | 用户填写 |
+| 报备分销员 | 关联 | 系统 | 取当前登录分销员 | 林晚晴 | 登录态带出 |
+
+## 3. 数据来源（业务层面）
+
+- 报备客户信息由分销员在小程序填写；报备分销员取当前登录账号。
+- 审核生效：报备提交后进入「报备审核」（待审核），后台审核通过后报备生效。
+- 保护期：审核通过后享保护期（天数由后台分销配置维护，默认 30 天），保护期内其他分销员无法通过统一社会信用代码报备同一客户。
+- 成交绑定：保护期内成交后，分销员与企业绑定，成为「我的客户」，后续该客户成交持续计佣。
+- 报备失效：超保护期未成交自动变为「报备失效」，届时其他分销员可重新报备。
+
+## 4. 功能与交互逻辑
+
+- 「提交报备」：客户企业名称与统一社会信用代码必填（18 位）；校验统一社会信用代码唯一性，待审核 / 报备中 / 已成交的客户不可重复报备；通过后新增报备记录（状态=待审核），等待后台审核。
+- 报备说明：提示提交报备后需后台审核，审核通过后报备生效并享保护期。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 报备审核页「＋ 报备客户」 | 点击 | 本页 |
+| 本页「提交报备」 | 点击 | 提交成功（待审核） |
+| 本页「返回」 | 点击 | 分销中心 |
+
+## 6. 边界与状态
+
+- 必填项未填：Toast 提示「请填写企业名称和统一社会信用代码」。
+- 信用代码非 18 位：Toast 提示「请输入 18 位统一社会信用代码」。
+- 信用代码重复：Toast 提示「该客户已被报备（待审核 / 报备中 / 已成交），无法重复报备」。
+</script>
+
+<script type="text/plain" id="req-md-dist-customer">
+# 我的客户 / 客户详情 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 我的客户（含客户详情） |
+| 所属端 | 小程序端 · 分销 → 我的客户 / 客户详情 |
+| 核心目标 | 分销员查看已生效客户列表（按状态分类），点击进入客户详情查看基本信息与分状态的跟进信息。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 客户企业 / 单位名称 | 文本 | 系统 | — | 长沙星耀文化传媒有限公司 | 报备带入 |
+| 统一社会信用代码 | 文本 | 系统 | 18 位 | 91430102MA4Q5YN29X | 报备带入 |
+| 联系人 / 联系电话 | 文本 | 系统 | — | 陈经理 · 13807310001 | 报备带入 |
+| 意向金额 | 金额 | 系统 | ≥ 0 | ¥120,000 | 报备带入 |
+| 报备时间 | 时间 | 系统 | — | 2026-11-02 10:20 | 系统记录 |
+| 保护期至 | 日期 | 系统 | 审核通过后 + 保护期天数 | 2026-12-02 | 系统计算 |
+| 客户状态 | 枚举 | 系统 | 报备中 / 已成交 / 报备失效 | 报备中 | 后台操作 |
+| 跟进记录 | 列表 | 系统 | 时间 + 文字 + 图片（可选） | — | 分销员添加 |
+| 成交记录 | 列表 | 系统 | 成交时间 + 批次号 + 客户实际支付金额 | — | 后台成交关联 |
+
+## 3. 数据来源（业务层面）
+
+- 客户列表来自「报备客户」提交且后台审核通过的报备（报备中 / 已成交 / 报备失效）。
+- 跟进记录由分销员在客户详情中添加（文字 + 图片）；成交记录来自后台确认成交并关联的礼品卡批次。
+
+## 4. 功能与交互逻辑
+
+- 「我的客户」：按状态 tab 分类（全部 / 已成交 / 报备中 / 报备失效），报备中显示保护期截止时间，已成交显示成交批次数；点击客户行进入客户详情。
+- 「客户详情」分两个模块：
+  - 基本信息（通用）：企业名称、信用代码、联系人、电话、意向金额、报备时间、状态、保护期。
+  - 跟进信息（分状态）：
+    - 报备中：展示跟进记录，可「添加跟进」（文字 + 图片，可删除）；
+    - 已成交：展示所有跟进记录 + 成交记录（成交时间、礼品卡批次号、客户实际支付金额）；
+    - 报备失效：展示跟进记录（如有）。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 分销中心「我的客户」模块「全部」 | 点击 | 我的客户 |
+| 我的客户客户行 | 点击 | 客户详情 |
+| 客户详情「返回」 | 点击 | 我的客户 |
+
+## 6. 边界与状态
+
+- 空态：无客户时展示「暂无客户」；无跟进记录时展示「暂无跟进记录」；无成交记录时展示「暂无成交记录」。
+- 报备中客户可添加/删除跟进记录；已成交、报备失效客户仅展示，不可新增。
+- 客户状态流转：报备中 → 已成交 / 报备失效，由后台操作。
+</script>
+
+<script type="text/plain" id="req-md-dist-report-audit">
+# 报备审核 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 报备审核 |
+| 所属端 | 小程序端 · 分销 → 报备审核 |
+| 核心目标 | 分销员查看自己提交的客户报备的审核状态（待审核 / 已驳回），了解报备是否生效。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 客户企业 / 单位名称 | 文本 | 系统 | — | 株洲华影数字影院有限公司 | 用户报备 |
+| 报备时间 | 时间 | 系统 | — | 2026-11-03 15:20 | 系统记录 |
+| 审核状态 | 枚举 | 系统 | 待审核 / 已驳回 | 待审核 | 后台审核 |
+| 驳回原因 | 文本 | 驳回时展示 | — | 客户信息与工商登记不符 | 后台填写 |
+
+## 3. 数据来源（业务层面）
+
+- 报备提交后进入本页展示审核状态；后台「客户报备审核」通过后报备生效（转入「我的客户」），驳回后展示驳回原因。
+
+## 4. 功能与交互逻辑
+
+- 顶部「＋ 报备客户」入口：点击跳转到报备客户表单页。
+- 按状态 tab 分类（全部 / 待审核 / 已驳回）。
+- 待审核：展示「待审核」徽标；已驳回：展示「已驳回」徽标与驳回原因。
+- 已驳回的报备，分销员可回到「报备客户」修改信息后重新提交。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 分销中心「报备客户」入口 → 报备审核 | 点击 | 本页 |
+| 本页「＋ 报备客户」 | 点击 | 报备客户表单页 |
+| 本页「返回」 | 点击 | 分销中心 |
+
+## 6. 边界与状态
+
+- 空态：无待审核 / 已驳回报备时展示「暂无报备审核记录」。
+- 已驳回报备展示驳回原因，便于分销员修改后重新提交。
+</script>
+
+<script type="text/plain" id="req-md-dist-commission">
+# 我的佣金 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 我的佣金 |
+| 所属端 | 小程序端 · 分销 → 我的佣金 |
+| 核心目标 | 展示分销员的累计提成与逐笔佣金明细，让分销员了解每笔佣金来自哪个礼品卡批次、按什么比例计算。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 累计提成 | 金额 | 系统 | 各批次提成之和 | ¥55,800 | 后台计佣 |
+| 礼品卡批次号 | 文本 | 系统 | — | GC20260920008 | 后台计佣 |
+| 企业 / 单位 | 文本 | 系统 | — | 长沙万象城商业管理有限公司 | 后台报备成交 |
+| 支付总额 | 金额 | 系统 | 客户实际支付金额 × 张数 | ¥450,000 | 礼品卡批次 |
+| 提成比例 | 百分比 | 系统 | 按分销员等级 | 10% | 分销配置 |
+| 提成金额 | 金额 | 系统 | 支付总额 × 提成比例 | ¥45,000 | 后台计佣 |
+
+## 3. 数据来源（业务层面）
+
+- 佣金来源：分销员报备客户 → 后台确认成交 → 创建礼品卡批次 → 关联批次 → 系统按批次「客户实际支付金额」× 提成比例计佣。
+- 提成比例由后台「分销配置」按分销员等级维护。
+
+## 4. 功能与交互逻辑
+
+- 顶部展示累计提成总额。
+- 明细列表逐笔展示：礼品卡批次号、企业 / 单位、支付总额、提成比例、提成金额。
+- 金额千分位展示，比例按百分比展示。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 分销中心「我的佣金」 | 点击 | 本页 |
+| 本页「返回」 | 点击 | 分销中心 |
+
+## 6. 边界与状态
+
+- 空态：无佣金时展示「暂无佣金 · 成交关联礼品卡批次后生成佣金」。
+</script>
+
+<script type="text/plain" id="req-md-dist-withdraw">
+# 发起提现 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 发起提现 |
+| 所属端 | 小程序端 · 分销 → 发起提现 |
+| 核心目标 | 分销员查看可提现余额与到账银行卡，发起提现申请，并查看历史提现记录。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 可提现余额 | 金额 | 系统 | 累计提成 − 已提现 − 提现中 | ¥30,800 | 后台累计提成 |
+| 到账银行卡 | 关联 | 系统 | 沿用入驻提交的卡号 / 开户行 / 开户名 | 工商银行 尾号 2345 | 分销员入驻资料 |
+| 提现金额 | 金额 | 必填 | ≥ ¥100，≤ ¥50,000，≤ 可提现余额 | ¥5,000 | 用户输入 |
+| 提现单号 | 文本 | 系统 | 唯一 | WD20261103001 | 系统生成 |
+| 提现状态 | 枚举 | 系统 | 待审核 / 已到账 / 已驳回 | 待审核 | 后台审核 |
+
+## 3. 数据来源（业务层面）
+
+- 可提现余额 = 累计提成 − 已提现 − 提现中；到账银行卡沿用分销员入驻时提交的收款银行卡。
+- 提现门槛与单笔上限由后台「分销配置」维护（默认最低 ¥100、单笔上限 ¥50,000）。
+
+## 4. 功能与交互逻辑
+
+- 顶部展示可提现余额；提现表单展示到账银行卡。
+- 「提交提现申请」：校验金额 ≥ ¥100、≤ ¥50,000、≤ 可提现余额，通过后新增一条「待审核」提现记录。
+- 提现记录列表展示历史提现单号、金额、时间与状态。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 分销中心「发起提现」 | 点击 | 本页 |
+| 本页「提交提现申请」 | 点击 | 新增待审核记录，列表刷新 |
+| 本页「返回」 | 点击 | 分销中心 |
+
+## 6. 边界与状态
+
+- 金额低于 ¥100：提示「提现金额需 ≥ ¥100」。
+- 金额高于 ¥50,000：提示「单笔提现不得超过 ¥50,000」。
+- 金额超过可提现余额：提示「提现金额超过可提现余额」。
+- 空态：无提现记录时展示「暂无提现记录」。
+</script>
+
+<script type="text/plain" id="req-md-dist-profile">
+# 个人中心 · 需求文档
+
+## 1. 页面概述
+
+| 项目 | 内容 |
+| --- | --- |
+| 页面名称 | 个人中心 |
+| 所属端 | 小程序端 · 分销 → 个人中心 |
+| 核心目标 | 分销员维护个人实名信息与收款银行卡，供计佣与提现使用。 |
+
+## 2. 字段清单
+
+| 字段名 | 类型 | 必填/可选 | 校验规则 | 示例值 | 数据来源 |
+| --- | --- | --- | --- | --- | --- |
+| 姓名 | 文本 | 必填 | 2–20 字符 | 林晚晴 | 申请资料带入，可修改 |
+| 身份证号码 | 文本 | 必填 | 18 位 | 430102199003154321 | 申请资料带入，可修改 |
+| 银行卡号 | 文本 | 必填 | 纯数字 | 6222021900012345 | 申请资料带入，可修改 |
+| 开户行 | 文本 | 必填 | 银行名称 | 中国工商银行 | 申请资料带入，可修改 |
+| 开户名 | 文本 | 必填 | 与姓名一致 | 林晚晴 | 申请资料带入，可修改 |
+
+## 3. 数据来源（业务层面）
+
+- 初始值取自分销员申请时提交的资料；修改后保存，更新该分销员的账户资料，供后续计佣与提现使用。
+
+## 4. 功能与交互逻辑
+
+- 实名信息区：维护姓名、身份证号码。
+- 收款银行卡区：维护银行卡号、开户行、开户名。
+- 「保存」：提交后更新资料并 Toast 提示「个人资料已保存」。
+
+## 5. 页面流转
+
+| 入口 | 触发 | 目标 |
+| --- | --- | --- |
+| 分销中心「个人中心」 | 点击 | 本页 |
+| 本页「保存」 | 点击 | 保存资料，刷新本页 |
+| 本页「返回」 | 点击 | 分销中心 |
+
+## 6. 边界与状态
+
+- 必填项为空：保留原值，不覆盖已有资料。
+- 保存成功：Toast 提示「个人资料已保存」。
+</script>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ============ mock 数据 ============ */
+  var themes = {
+    coral:'linear-gradient(135deg,#E8502F,#E9A23B)',
+    gold:'linear-gradient(135deg,#C77F1D,#F0C46A)',
+    brown:'linear-gradient(135deg,#8A4A32,#D68A5A)',
+    green:'linear-gradient(135deg,#3E9B63,#8FCFA8)'
+  };
+  var statusMap = {
+    '已激活':{cls:'st-active', label:'可用'},
+    '挂失冻结':{cls:'st-frozen', label:'已冻结'},
+    '已过期':{cls:'st-expired', label:'已过期'},
+    '已用尽':{cls:'st-used', label:'已用尽'}
+  };
+
+  /* 用户已绑定的卡（对齐后台状态机） */
+  var cards = [
+    {no:'9120261102000017', batchNo:'GC20261102001', logo:'福', theme:'coral', title:'新春员工福利卡', face:200, remain:150, status:'已激活', actType:'用户激活', actTime:'2026-11-02 15:20', end:'2027-06-30', scope:'全部商品', records:[
+      {orderNo:'DD20261102153001', time:'2026-11-02 15:30', amount:30},
+      {orderNo:'DD20261102183002', time:'2026-11-02 18:30', amount:20}
+    ]},
+    {no:'9120261028000912', batchNo:'GC20261028006', logo:'礼', theme:'gold', title:'中秋团圆礼卡', face:500, remain:500, status:'挂失冻结', actType:'系统分发', actTime:'2026-10-28 10:05', end:'2027-03-31', scope:'电影票、卖品套餐', records:[]},
+    {no:'9120260901000254', batchNo:'GC20260901002', logo:'影', theme:'brown', title:'端午安康卡', face:200, remain:80, status:'已过期', actType:'用户激活', actTime:'2026-09-01 11:40', end:'2027-05-31', scope:'全部商品', records:[
+      {orderNo:'DD20260915110003', time:'2026-09-15 11:00', amount:120}
+    ]},
+    {no:'9120261015000378', batchNo:'GC20261015003', logo:'春', theme:'green', title:'观影福利卡', face:100, remain:0, status:'已用尽', actType:'系统分发', actTime:'2026-10-15 09:30', end:'2027-10-14', scope:'全部商品', records:[
+      {orderNo:'DD20261020093004', time:'2026-10-20 09:30', amount:100}
+    ]}
+  ];
+
+  /* 待激活的卡（扫码绑定演示） */
+  var pendingCard = {no:'9120260812000555', batchNo:'GC20260812005', logo:'乐', theme:'coral', title:'夏日观影礼', face:500, remain:500, end:'2027-08-11', scope:'电影周边、会员卡'};
+
+  /* ============ 页面切换 ============ */
+  // 每个 screen 对应一份独立需求文档
+  var screenDoc = {
+    'scr-wallet':'req-md-gift', 'scr-scan':'req-md-gift', 'scr-detail':'req-md-gift',
+    'scr-dist-home':'req-md-dist-home', 'scr-dist-apply':'req-md-dist-apply',
+    'scr-dist-report':'req-md-dist-report', 'scr-dist-customers':'req-md-dist-customer',
+    'scr-dist-customer-detail':'req-md-dist-customer',
+    'scr-dist-report-audit':'req-md-dist-report-audit',
+    'scr-dist-commission':'req-md-dist-commission',
+    'scr-dist-withdraw':'req-md-dist-withdraw', 'scr-dist-profile':'req-md-dist-profile'
+  };
+  var screenNames = {
+    'scr-wallet':'卡包', 'scr-scan':'扫码绑定', 'scr-detail':'卡详情',
+    'scr-dist-home':'分销中心', 'scr-dist-apply':'申请成为分销员',
+    'scr-dist-report':'报备客户', 'scr-dist-customers':'我的客户',
+    'scr-dist-customer-detail':'客户详情',
+    'scr-dist-report-audit':'报备审核',
+    'scr-dist-commission':'我的佣金',
+    'scr-dist-withdraw':'发起提现', 'scr-dist-profile':'个人中心'
+  };
+  var currentScreen = 'scr-wallet';
+  function showScreen(id){
+    currentScreen = id;
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    $(id).classList.add('active');
+    $('phoneScreen').scrollTop = 0;
+    if($('docPanel').classList.contains('open')){ renderDoc(); }
+  }
+  document.querySelectorAll('[data-back]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.dataset.back;
+      if(target==='scr-dist-home') renderDistHome(); // 返回分销首页时刷新数据
+      if(target==='scr-dist-customers') renderDistCustomers(); // 返回我的客户时刷新
+      showScreen(target);
+    });
+  });
+
+  /* ============ 渲染卡包 ============ */
+  var walletTab = '全部'; // 卡包 TAB 状态
+
+  function renderWallet(){
+    var tabs = ['全部','可用','已冻结','已过期','已用尽'];
+    var tabLabels = {全部:'全部', 已激活:'可用', 挂失冻结:'已冻结', 已过期:'已过期', 已用尽:'已用尽'};
+
+    var html = '';
+    if(cards.length===0){
+      html = '<div class="empty"><div class="e-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></div>'+
+        '<b>还没有礼品卡</b><p>扫码激活礼品卡，即可在卡包查看并使用</p>'+
+        '<button class="btn btn-primary" onclick="gotoScan()">扫码绑定礼品卡</button></div>';
+    }else{
+      // TAB 栏
+      html = '<div class="tabs">'+tabs.map(function(t){
+        return '<button class="tab'+(walletTab===t?' active':'')+'" data-tab="'+t+'">'+t+'</button>';
+      }).join('')+'</div>';
+
+      // 按 TAB 过滤
+      var filtered = cards.filter(function(c){
+        if(walletTab==='全部') return true;
+        return tabLabels[c.status]===walletTab;
+      });
+
+      if(filtered.length===0){
+        html += '<div class="empty" style="padding:50px 20px"><div class="e-ico" style="width:60px;height:60px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div><b>暂无该状态的卡</b><p>当前没有「'+walletTab+'」状态的礼品卡</p></div>';
+      }else{
+        html += '<div class="wallet-head"><h2>我的礼品卡</h2><span>'+filtered.length+' 张</span></div>'+
+          filtered.map(function(c){
+            var st = statusMap[c.status];
+            var dim = c.status!=='已激活';
+            return '<div class="gcard'+(dim?' dim':'')+'" style="background:'+themes[c.theme]+'" data-no="'+c.no+'">'+
+              '<div class="gc-top"><span class="gc-logo">'+c.logo+'</span><span class="st '+st.cls+'" style="background:rgba(255,255,255,.2);color:#fff">'+st.label+'</span></div>'+
+              '<div class="gc-title">'+esc(c.title)+'</div>'+
+              '<div class="gc-batch">批次 '+c.batchNo+'</div>'+
+              '<div class="gc-face"><span>¥</span>'+c.face+'</div>'+
+              '<div class="gc-foot"><span>有效期至 '+c.end+'</span><span class="gc-remain">剩余<b>¥'+c.remain.toFixed(2)+'</b></span></div>'+
+            '</div>';
+          }).join('');
+      }
+    }
+    $('walletBody').innerHTML = html;
+  }
+
+  function gotoScan(){ showScreen('scr-scan'); renderScan('frame'); }
+  window.gotoScan = gotoScan;
+
+  /* ============ 扫码绑定流程 ============ */
+  function renderScan(step){
+    var html;
+    if(step==='frame'){
+      html = '<div class="scan-frame"><div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div><div class="scan-line"></div></div>'+
+        '<div class="scan-tip">对准礼品卡上的二维码</div>'+
+        '<div class="scan-act"><button class="btn btn-primary" onclick="renderScan(\'confirm\')">模拟扫码</button></div>'+
+        '<div class="scan-tip" style="margin-top:10px;font-size:11.5px">原型演示 · 点击模拟扫码</div>';
+    }else if(step==='confirm'){
+      html = '<div class="confirm-card"><div class="cc-title">确认激活礼品卡</div>'+
+        '<div class="cc-row"><span class="k">卡面</span><span class="v">'+esc(pendingCard.title)+'</span></div>'+
+        '<div class="cc-row"><span class="k">卡号</span><span class="v mono">'+pendingCard.no+'</span></div>'+
+        '<div class="cc-row"><span class="k">密码</span><span class="v mono">•••• •••• ••••</span></div>'+
+        '<div class="cc-row"><span class="k">面值</span><span class="v">¥'+pendingCard.face+'</span></div>'+
+        '<div class="cc-row"><span class="k">有效期</span><span class="v">至 '+pendingCard.end+'</span></div>'+
+        '</div>'+
+        '<div style="margin-top:16px;display:flex;gap:10px">'+
+          '<button class="btn btn-ghost" style="flex:1" onclick="renderScan(\'frame\')">重新扫码</button>'+
+          '<button class="btn btn-primary" style="flex:1" onclick="doActivate()">确认激活</button>'+
+        '</div>';
+    }else if(step==='success'){
+      html = '<div class="success-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
+        '<div class="cc-title" style="text-align:center">激活成功</div>'+
+        '<div class="scan-tip">礼品卡已加入卡包</div>'+
+        '<div class="scan-act"><button class="btn btn-primary" onclick="backToWallet()">查看卡包</button></div>';
+    }
+    $('scanBody').innerHTML = html;
+  }
+  window.renderScan = renderScan;
+
+  function doActivate(){
+    // 把待激活卡加入卡包，状态=已激活，激活方式=用户激活
+    var c = {
+      no:pendingCard.no, logo:pendingCard.logo, theme:pendingCard.theme,
+      title:pendingCard.title, face:pendingCard.face, remain:pendingCard.remain,
+      status:'已激活', actType:'用户激活', actTime:nowTime(), end:pendingCard.end,
+      scope:pendingCard.scope, records:[]
+    };
+    cards.unshift(c);
+    renderWallet();
+    renderScan('success');
+  }
+  window.doActivate = doActivate;
+
+  function backToWallet(){ renderWallet(); showScreen('scr-wallet'); toast('礼品卡已激活'); }
+  window.backToWallet = backToWallet;
+
+  /* ============ 卡详情 ============ */
+  function renderDetail(no){
+    var c = cards.find(function(x){ return x.no===no; });
+    if(!c) return;
+    var st = statusMap[c.status];
+    var recordsHtml = c.records.length===0
+      ? '<div style="text-align:center;color:var(--faint);padding:20px 0;font-size:12.5px">暂无消费记录</div>'
+      : c.records.map(function(r){
+          return '<div class="rec-item"><div class="r-left"><span class="r-no">'+r.orderNo+'</span><span class="r-time">'+r.time+'</span></div><span class="r-amt">-¥'+r.amount.toFixed(2)+'</span></div>';
+        }).join('');
+    $('detailBody').innerHTML =
+      '<div class="detail-face"><div class="gcard" style="background:'+themes[c.theme]+';cursor:default">'+
+        '<div class="gc-top"><span class="gc-logo">'+c.logo+'</span><span class="st '+st.cls+'" style="background:rgba(255,255,255,.2);color:#fff">'+st.label+'</span></div>'+
+        '<div class="gc-title">'+esc(c.title)+'</div>'+
+        '<div class="gc-batch">批次 '+c.batchNo+'</div>'+
+        '<div class="gc-face"><span>¥</span>'+c.face+'</div>'+
+        '<div class="gc-foot"><span>卡号 '+c.no.slice(-6)+'</span><span class="gc-remain">剩余<b>¥'+c.remain.toFixed(2)+'</b></span></div>'+
+      '</div></div>'+
+      '<div class="info-card">'+
+        '<div class="info-row"><span class="k">卡号</span><span class="v mono">'+c.no+'</span></div>'+
+        '<div class="info-row"><span class="k">激活方式</span><span class="v">'+c.actType+'</span></div>'+
+        '<div class="info-row"><span class="k">激活时间</span><span class="v">'+c.actTime+'</span></div>'+
+        '<div class="info-row"><span class="k">有效期</span><span class="v">至 '+c.end+'</span></div>'+
+        '<div class="info-row"><span class="k">适用范围</span><span class="v">'+esc(c.scope)+'</span></div>'+
+      '</div>'+
+      '<div class="sec-title">消费记录<span>共 '+c.records.length+' 笔</span></div>'+
+      '<div class="info-card">'+recordsHtml+'</div>';
+  }
+
+  /* ============ 二维码 SVG ============ */
+  function hashSeed(s){ var h=0; for(var i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return h; }
+  function seededRandom(seed){ var s=seed; return function(){ s=(s*1664525+1013904223)>>>0; return s/4294967296; }; }
+  function nowTime(){ var d=new Date(); var p=function(n){ return String(n).padStart(2,'0'); }; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+
+  /* ============ 事件绑定 ============ */
+  $('btnScanEntry').addEventListener('click', gotoScan);
+  $('walletBody').addEventListener('click', function(e){
+    var tab = e.target.closest('.tab[data-tab]');
+    if(tab){ walletTab = tab.dataset.tab; renderWallet(); return; }
+    var card = e.target.closest('.gcard[data-no]');
+    if(card){ renderDetail(card.dataset.no); showScreen('scr-detail'); }
+  });
+  // 我的客户详情页 tab 切换 + 客户点击进入详情
+  $('distCustomersBody').addEventListener('click', function(e){
+    var tab = e.target.closest('.tab[data-ctab]');
+    if(tab){ customersTab = tab.dataset.ctab; renderDistCustomers(); return; }
+    var cust = e.target.closest('[data-cust]');
+    if(cust){ renderDistCustomerDetail(cust.dataset.cust); showScreen('scr-dist-customer-detail'); }
+  });
+  // 分销中心首页「我的客户」点击进入详情
+  $('distHomeBody').addEventListener('click', function(e){
+    var cust = e.target.closest('[data-cust]');
+    if(cust){ renderDistCustomerDetail(cust.dataset.cust); showScreen('scr-dist-customer-detail'); }
+  });
+  // 报备审核页 tab 切换
+  $('distReportAuditBody').addEventListener('click', function(e){
+    var tab = e.target.closest('.tab[data-ratab]');
+    if(tab){ reportAuditTab = tab.dataset.ratab; renderDistReportAudit(); }
+  });
+
+  /* ============ 模块切换 ============ */
+  function switchModule(mod){
+    document.querySelectorAll('.mn-item[data-mod]').forEach(function(el){
+      el.classList.toggle('active', el.dataset.mod===mod);
+    });
+    if(mod==='gift'){
+      showScreen('scr-wallet');
+    }else if(mod==='distribution'){
+      renderDistHome();
+      showScreen('scr-dist-home');
+    }
+  }
+  document.querySelectorAll('.mn-item[data-mod]').forEach(function(el){
+    el.addEventListener('click', function(){
+      switchModule(el.dataset.mod);
+    });
+  });
+  document.querySelectorAll('.mn-item[data-soon]').forEach(function(el){
+    el.addEventListener('click', function(){ toast('该模块待建设'); });
+  });
+
+  /* ============ 分销模块 ============ */
+  // 当前用户：未申请分销员（默认演示申请流程）
+  var distUser = {
+    name:'林晚晴', phone:'138****0012', level:'金牌', levelCls:'gold', levelRate:10,
+    idCard:'', idFront:'', idBack:'', bank:'', bankCard:'', bankHolder:'', note:'',
+    rejectReason:'',
+    status:'none' // approved 已通过 / pending 待审核 / rejected 已驳回 / none 未申请
+  };
+  var distCommissions = [
+    {batchNo:'GC20260920008', enterprise:'长沙万象城商业管理有限公司', payTotal:450000, rate:0.10, amount:45000, time:'2026-09-20 12:10'},
+    {batchNo:'GC20261028006', enterprise:'湖南映刻影业集团', payTotal:135000, rate:0.08, amount:10800, time:'2026-10-28 10:00'}
+  ];
+  var distReports = [
+    {enterprise:'中影南方（长沙）院线有限公司', creditCode:'91430104MA4QUHD5XK', contact:'王主管', phone:'13707310003', budget:100000, status:'dealed', time:'2026-10-25 09:10', dealTime:'2026-10-30 14:00', batches:[{batchNo:'GC20261015003', payTotal:90000}], rejectReason:''},
+    {enterprise:'湖南广电集团工会', creditCode:'91430100MA4PXD7M6J', contact:'周主任', phone:'13607310004', budget:180000, status:'dealed', time:'2026-10-20 11:30', dealTime:'2026-10-22 16:20', batches:[{batchNo:'GC20260901002', payTotal:160000}], rejectReason:''},
+    {enterprise:'长沙星耀文化传媒有限公司', creditCode:'91430102MA4Q5YN29X', contact:'陈经理', phone:'13807310001', budget:120000, status:'following', time:'2026-11-02 10:20', dealTime:'', protectEnd:'2026-12-02', batches:[], rejectReason:''},
+    {enterprise:'湖南映刻影业集团', creditCode:'91430100MA4R7WLQ3T', contact:'刘总', phone:'13907310002', budget:200000, status:'following', time:'2026-11-01 15:40', dealTime:'', protectEnd:'2026-12-01', batches:[], rejectReason:''},
+    {enterprise:'长沙万象城商业管理有限公司', creditCode:'91430111MA4L5N2H4R', contact:'李主管', phone:'13407310006', budget:300000, status:'following', time:'2026-11-03 08:45', dealTime:'', protectEnd:'2026-12-03', batches:[], rejectReason:''},
+    {enterprise:'湖南高铁传媒有限公司', creditCode:'91430103MA4T8KQ2WD', contact:'赵经理', phone:'13507310005', budget:80000, status:'invalid', time:'2026-10-12 14:50', dealTime:'', protectEnd:'2026-11-11', batches:[], rejectReason:''},
+    {enterprise:'湘潭嘉禾文化传媒有限公司', creditCode:'91430300MA4L2KQ1XA', contact:'孙总监', phone:'13307310007', budget:150000, status:'invalid', time:'2026-09-28 10:00', dealTime:'', protectEnd:'2026-10-28', batches:[], rejectReason:''},
+    {enterprise:'株洲华影数字影院有限公司', creditCode:'91430200MA4Q7XK3YD', contact:'吴经理', phone:'13007310008', budget:90000, status:'pending', time:'2026-11-03 15:20', dealTime:'', protectEnd:'', batches:[], rejectReason:''},
+    {enterprise:'岳阳星湖传媒有限公司', creditCode:'91430600MA4L9TJ8RF', contact:'郑主管', phone:'13107310009', budget:110000, status:'pending', time:'2026-11-03 16:40', dealTime:'', protectEnd:'', batches:[], rejectReason:''},
+    {enterprise:'常德银都影视有限公司', creditCode:'91430700MA4M2WP5TH', contact:'冯经理', phone:'13207310010', budget:70000, status:'rejected', time:'2026-11-02 09:30', dealTime:'', protectEnd:'', batches:[], rejectReason:'客户信息与工商登记不符，请核对统一社会信用代码后重新提交'}
+  ];
+  var distWithdrawals = [
+    {no:'WD20261022004', amount:20000, status:'paid', time:'2026-10-22 09:05'},
+    {no:'WD20261103001', amount:5000, status:'pending', time:'2026-11-03 09:20'}
+  ];
+
+  function distCommissionTotal(){ return distCommissions.reduce(function(s,c){return s+c.amount;},0); }
+  function distWithdrawnTotal(){ return distWithdrawals.filter(function(w){return w.status!=='rejected';}).reduce(function(s,w){return s+w.amount;},0); }
+  function distBalance(){ return distCommissionTotal() - distWithdrawnTotal(); }
+
+  function distStatusBadge(s){ return {pending:'<span class="dst dst-wait">待审核</span>', rejected:'<span class="dst dst-invalid">已驳回</span>', following:'<span class="dst dst-follow">报备中</span>', dealed:'<span class="dst dst-deal">已成交</span>', invalid:'<span class="dst dst-invalid">报备失效</span>'}[s]; }
+
+  var customersTab = 'all'; // 我的客户 tab 分类
+  var reportAuditTab = 'all'; // 报备审核 tab 分类
+
+  function renderDistHome(){
+    var html = '';
+    if(distUser.status==='none'){
+      // 未申请：展示引导申请
+      html += '<div class="dist-hero" style="text-align:center"><div class="dh-top" style="justify-content:center"><div class="dh-avatar">'+esc(distUser.name.slice(0,1))+'</div><div><div class="dh-name">'+esc(distUser.name)+'</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">'+esc(distUser.phone)+'</div></div></div>'+
+        '<div class="dh-balance" style="margin-top:22px"><span>尚未成为分销员</span><b style="font-size:24px">申请分销员</b><small style="display:block;margin:8px 0 0;color:rgba(255,255,255,.82);font-weight:400">报备客户 · 成交赚佣金</small></div>'+
+        '<div class="dh-actions" style="margin-top:20px"><button class="dh-btn primary" data-nav="scr-dist-apply">立即申请</button></div></div>';
+      html += '<div class="dist-sec"><div class="ds-title">分销员权益</div>'+
+        '<div class="dist-row"><span class="k">报备客户</span><span class="v">跟进成交</span></div>'+
+        '<div class="dist-row"><span class="k">按批次实际支付金额计佣</span><span class="v">累计提成</span></div>'+
+        '<div class="dist-row"><span class="k">佣金提现</span><span class="v">到账银行卡</span></div></div>';
+      $('distHomeBody').innerHTML = html;
+      return;
+    }
+    if(distUser.status==='pending'){
+      // 待审核：展示审核中
+      html += '<div class="dist-hero" style="text-align:center"><div class="dh-top" style="justify-content:center"><div class="dh-avatar">'+esc(distUser.name.slice(0,1))+'</div><div><div class="dh-name">'+esc(distUser.name)+'</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">'+esc(distUser.phone)+'</div></div></div>'+
+        '<div class="dh-balance" style="margin-top:22px"><span>申请审核中</span><b style="font-size:22px">已提交申请</b><small style="display:block;margin:8px 0 0;color:rgba(255,255,255,.82);font-weight:400">请等待后台审核 · 可点击右下角「模拟审核通过 / 驳回」演示</small></div></div>';
+      html += '<div class="dist-sec"><div class="ds-title">申请资料</div>'+
+        '<div class="dist-row"><span class="k">姓名</span><span class="v">'+esc(distUser.name)+'</span></div>'+
+        '<div class="dist-row"><span class="k">身份证号码</span><span class="v mono" style="font-size:12px">'+esc(distUser.idCard)+'</span></div>'+
+        '<div class="dist-row"><span class="k">收款银行卡</span><span class="v">'+esc(distUser.bank)+' '+distUser.bankCard.slice(-4)+'</span></div>'+
+        '<div class="dist-row"><span class="k">开户行</span><span class="v">'+esc(distUser.bank)+'</span></div>'+
+        '<div class="dist-row"><span class="k">开户名</span><span class="v">'+esc(distUser.bankHolder)+'</span></div>'+
+        '<div class="dist-row"><span class="k">说明</span><span class="v">'+(distUser.note?esc(distUser.note):'—')+'</span></div></div>';
+      $('distHomeBody').innerHTML = html;
+      return;
+    }
+    if(distUser.status==='rejected'){
+      // 已驳回：展示驳回原因 + 申请资料 + 重新申请
+      html += '<div class="dist-hero" style="text-align:center"><div class="dh-top" style="justify-content:center"><div class="dh-avatar">'+esc(distUser.name.slice(0,1))+'</div><div><div class="dh-name">'+esc(distUser.name)+'</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">'+esc(distUser.phone)+'</div></div></div>'+
+        '<div class="dh-balance" style="margin-top:22px"><span>申请未通过</span><b style="font-size:22px">已驳回</b><small style="display:block;margin:8px 0 0;color:rgba(255,255,255,.82);font-weight:400">可修改资料后重新申请</small></div>'+
+        '<div class="dh-actions" style="margin-top:20px"><button class="dh-btn primary" data-nav="scr-dist-apply">重新申请</button></div></div>';
+      html += '<div class="dist-sec"><div class="ds-title">驳回原因</div>'+
+        '<div class="dist-row"><span class="k">原因</span><span class="v" style="color:var(--coral-deep)">'+(distUser.rejectReason?esc(distUser.rejectReason):'—')+'</span></div></div>';
+      html += '<div class="dist-sec" style="margin-top:12px"><div class="ds-title">申请资料</div>'+
+        '<div class="dist-row"><span class="k">姓名</span><span class="v">'+esc(distUser.name)+'</span></div>'+
+        '<div class="dist-row"><span class="k">身份证号码</span><span class="v mono" style="font-size:12px">'+esc(distUser.idCard)+'</span></div>'+
+        '<div class="dist-row"><span class="k">收款银行卡</span><span class="v">'+esc(distUser.bank)+' '+distUser.bankCard.slice(-4)+'</span></div>'+
+        '<div class="dist-row"><span class="k">开户行</span><span class="v">'+esc(distUser.bank)+'</span></div>'+
+        '<div class="dist-row"><span class="k">开户名</span><span class="v">'+esc(distUser.bankHolder)+'</span></div>'+
+        '<div class="dist-row"><span class="k">说明</span><span class="v">'+(distUser.note?esc(distUser.note):'—')+'</span></div></div>';
+      $('distHomeBody').innerHTML = html;
+      return;
+    }
+    // 已通过：完整分销中心
+    var bal = distBalance();
+    html += '<div class="dist-hero"><div class="dh-top"><div class="dh-avatar">'+esc(distUser.name.slice(0,1))+'</div><div><div class="dh-name">'+esc(distUser.name)+' <span class="dh-level">'+esc(distUser.level)+'分销员 · '+distUser.levelRate+'%</span></div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">'+esc(distUser.phone)+'</div></div></div>'+
+      '<div class="dh-balance"><span>可提现余额（元）</span><b>'+bal.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})+'</b></div>'+
+      '<div class="dh-actions"><button class="dh-btn primary" data-nav="scr-dist-withdraw">发起提现</button><button class="dh-btn ghost" data-nav="scr-dist-commission">我的佣金</button></div></div>';
+    html += '<div class="dist-grid">'+
+      '<div class="dist-cell" data-nav="scr-dist-report-audit"><div class="dc-ic" style="background:var(--gold-soft);color:var(--gold-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-3h16l1 3"/><path d="M4 9h16v10H4z"/><path d="M8 9v10"/></svg></div><b>报备客户</b><span>报备跟进成交</span></div>'+
+      '<div class="dist-cell" data-nav="scr-dist-commission"><div class="dc-ic" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 10.5c0-1.5-1.2-2.5-3-2.5s-3 1-3 2.5 1.2 2.5 3 2.5 3 1 3 2.5-1.2 2.5-3 2.5-3-1-3-2.5"/></svg></div><b>我的佣金</b><span>累计提成明细</span></div>'+
+      '<div class="dist-cell" data-nav="scr-dist-withdraw"><div class="dc-ic" style="background:var(--coral-soft);color:var(--coral-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><b>发起提现</b><span>提现到银行卡</span></div>'+
+      '<div class="dist-cell" data-nav="scr-dist-profile"><div class="dc-ic" style="background:rgba(150,129,108,.14);color:var(--muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg></div><b>个人中心</b><span>实名与银行卡</span></div>'+
+    '</div>';
+    var effectiveReports = distReports.filter(function(r){ return r.status==='following' || r.status==='dealed' || r.status==='invalid'; });
+    html += '<div class="dist-sec"><div class="ds-title"><span>我的客户</span><span style="display:inline-flex;align-items:center;gap:10px"><span style="color:var(--faint);font-size:11.5px;font-weight:400">'+effectiveReports.length+' 个</span><button class="dh-btn primary" style="padding:5px 14px;font-size:12px" data-nav="scr-dist-customers">全部</button></span></div>';
+    if(effectiveReports.length===0){
+      html += '<div class="dist-row"><span class="k">暂无客户</span><span class="v">去报备客户</span></div>';
+    }else{
+      effectiveReports.slice(0,5).forEach(function(r){
+        html += '<div class="dist-row" data-cust="'+esc(r.creditCode)+'" style="cursor:pointer"><span class="k">'+esc(r.enterprise)+'</span><span class="v">'+distStatusBadge(r.status)+'</span></div>';
+      });
+    }
+    html += '</div>';
+    $('distHomeBody').innerHTML = html;
+  }
+
+  function renderDistApply(){
+    var agreement = '1. 分销员应保证报备的客户信息真实、准确、完整，不得虚构或冒用他人企业信息。\n2. 报备客户后享有保护期，保护期内其他分销员不得通过统一社会信用代码重复报备同一客户。\n3. 保护期内客户成交后，分销员与该客户建立绑定关系，后续该客户的成交按对应等级比例计佣。\n4. 分销员不得通过不正当手段获取佣金，一经发现，平台有权取消其分销资格并追回已发放佣金。\n5. 本协议最终解释权归平台所有。';
+    $('distApplyBody').innerHTML =
+      '<div class="df-card" style="margin-bottom:76px"><div class="sec-title" style="margin-bottom:16px">申请资料</div>'+
+      '<div class="df-field"><label>姓名 <span class="req">*</span> <span class="hint">登录态自动带出</span></label><input id="dapName" value="'+esc(distUser.name)+'"></div>'+
+      '<div class="df-field"><label>身份证号码 <span class="req">*</span></label><input id="dapIdCard" value="'+esc(distUser.idCard)+'" placeholder="请输入 18 位身份证号码" maxlength="18"></div>'+
+      '<div class="df-field"><label>身份证照片 <span class="req">*</span> <span class="hint">人像面 + 国徽面</span></label>'+
+        '<div style="display:flex;gap:12px"><div class="id-photo" id="dapIdFront" style="background:'+(distUser.idFront||'linear-gradient(135deg,#F0E2CE,#E3D2B8)')+'">'+(distUser.idFront?'人像面':'<span style="color:var(--faint);font-size:11px">人像面</span>')+'</div><div class="id-photo" id="dapIdBack" style="background:'+(distUser.idBack||'linear-gradient(135deg,#E8DCC8,#D9CAB2)')+'">'+(distUser.idBack?'国徽面':'<span style="color:var(--faint);font-size:11px">国徽面</span>')+'</div></div></div>'+
+      '<div class="df-field"><label>收款银行卡号 <span class="req">*</span></label><input id="dapBankCard" value="'+esc(distUser.bankCard)+'" placeholder="请输入银行卡号"></div>'+
+      '<div class="df-field"><label>开户行 <span class="req">*</span></label><input id="dapBank" value="'+esc(distUser.bank)+'" placeholder="如：中国工商银行"></div>'+
+      '<div class="df-field"><label>开户名 <span class="req">*</span></label><input id="dapBankHolder" value="'+esc(distUser.bankHolder)+'" placeholder="与姓名一致"></div>'+
+      '<div class="df-field"><label>说明 <span class="hint">（非必填）</span></label><textarea id="dapNote" placeholder="选填，补充说明">'+esc(distUser.note)+'</textarea></div></div>'+
+      '<div class="sticky-foot">'+
+        '<div class="sf-agree"><input type="checkbox" id="dapAgree" style="width:16px;height:16px;flex:none;accent-color:var(--coral)"><label for="dapAgree" style="font-size:12px;color:var(--ink-soft);cursor:pointer">我已阅读并同意<span id="dapAgreeLink" style="color:var(--coral-deep);font-weight:600;cursor:pointer">《分销协议》</span></label></div>'+
+        '<div class="df-field" id="dapAgreeErr" style="margin-top:4px"><span class="err">请先阅读并勾选同意分销协议</span></div>'+
+        '<button class="btn btn-primary" id="dapSubmit">提交申请</button>'+
+      '</div>';
+    $('dapAgreeLink').addEventListener('click', function(){
+      $('agreementBody').textContent = agreement;
+      $('agreementMask').classList.add('open');
+    });
+    // 身份证照片上传（模拟）
+    var idPhotos = ['linear-gradient(135deg,#E8502F,#E9A23B)','linear-gradient(135deg,#C77F1D,#F0C46A)','linear-gradient(135deg,#3E9B63,#8FCFA8)'];
+    $('dapIdFront').addEventListener('click', function(){
+      distUser.idFront = idPhotos[Math.floor(Math.random()*idPhotos.length)];
+      this.style.background = distUser.idFront;
+      this.innerHTML = '人像面';
+      this.style.color = '#fff';
+      toast('人像面已上传');
+    });
+    $('dapIdBack').addEventListener('click', function(){
+      distUser.idBack = idPhotos[Math.floor(Math.random()*idPhotos.length)];
+      this.style.background = distUser.idBack;
+      this.innerHTML = '国徽面';
+      this.style.color = '#fff';
+      toast('国徽面已上传');
+    });
+    $('dapSubmit').addEventListener('click', function(){
+      var name = $('dapName').value.trim();
+      var idCard = $('dapIdCard').value.trim();
+      var bankCard = $('dapBankCard').value.trim();
+      var bank = $('dapBank').value.trim();
+      var bankHolder = $('dapBankHolder').value.trim();
+      var note = $('dapNote').value.trim();
+      if(!name || !idCard || !bankCard || !bank || !bankHolder){ toast('请填写必填项'); return; }
+      if(idCard.length!==18){ toast('请输入 18 位身份证号码'); return; }
+      if(!distUser.idFront || !distUser.idBack){ toast('请上传身份证正反面照片'); return; }
+      if(!$('dapAgree').checked){ $('dapAgreeErr').classList.add('error'); toast('请先阅读并勾选同意分销协议'); return; }
+      $('dapAgreeErr').classList.remove('error');
+      distUser.name = name;
+      distUser.idCard = idCard;
+      distUser.bank = bank;
+      distUser.bankCard = bankCard;
+      distUser.bankHolder = bankHolder;
+      distUser.note = note;
+      distUser.rejectReason = '';
+      distUser.status = 'pending';
+      toast('申请已提交，等待审核');
+      renderDistHome();
+      showScreen('scr-dist-home');
+    });
+  }
+
+  function renderDistReport(){
+    $('distReportBody').innerHTML =
+      '<div class="df-card" style="margin-bottom:14px"><div class="sec-title" style="margin-bottom:16px">报备客户</div>'+
+      '<div class="df-field"><label>客户企业 / 单位名称 <span class="req">*</span></label><input id="drpEnterprise" placeholder="如：长沙星耀文化传媒有限公司"></div>'+
+      '<div class="df-field"><label>统一社会信用代码 <span class="req">*</span></label><input id="drpCredit" placeholder="18 位统一社会信用代码" maxlength="18"></div>'+
+      '<div class="df-field"><label>联系人</label><input id="drpContact" placeholder="客户方对接人姓名"></div>'+
+      '<div class="df-field"><label>联系电话</label><input id="drpPhone" placeholder="客户方联系电话"></div>'+
+      '<div class="df-field"><label>意向金额 / 预算</label><input id="drpBudget" placeholder="预估采购金额（元）" type="number"></div>'+
+      '<div class="df-field"><label>备注</label><textarea id="drpNote" placeholder="选填，补充说明"></textarea></div>'+
+      '<div class="df-field"><label>报备说明 <span class="hint">（审核后生效）</span></label><div class="dist-row" style="background:var(--gold-soft);border-radius:8px;padding:8px 12px;margin-top:4px"><span class="k" style="font-size:12px">提交报备后需后台审核，审核通过后报备生效并享保护期；保护期内其他分销员无法通过统一社会信用代码报备同一客户；保护期内成交即与客户绑定，后续成交持续计佣；超保护期未成交自动变为「报备失效」。</span></div></div>'+
+      '<button class="btn btn-primary" id="drpSubmit">提交报备</button></div>';
+    $('drpSubmit').addEventListener('click', function(){
+      var ent = $('drpEnterprise').value.trim();
+      var credit = $('drpCredit').value.trim();
+      if(!ent || !credit){ toast('请填写企业名称和统一社会信用代码'); return; }
+      if(credit.length!==18){ toast('请输入 18 位统一社会信用代码'); return; }
+      // 统一社会信用代码唯一性校验（待审核 / 报备中 / 已成交的客户不可重复报备）
+      var dup = distReports.find(function(r){ return r.creditCode===credit && (r.status==='pending' || r.status==='following' || r.status==='dealed'); });
+      if(dup){ toast('该客户已被报备（待审核 / 报备中 / 已成交），无法重复报备'); return; }
+      distReports.unshift({enterprise:ent, creditCode:credit, contact:$('drpContact').value.trim(), phone:$('drpPhone').value.trim(), budget:parseFloat($('drpBudget').value)||0, status:'pending', time:nowTime(), dealTime:'', protectEnd:'', batches:[], rejectReason:''});
+      toast('报备已提交，等待后台审核');
+      renderDistReport();
+    });
+  }
+
+  function protectEndDate(){
+    var d = new Date();
+    d.setDate(d.getDate()+30);
+    var p=function(n){ return String(n).padStart(2,'0'); };
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+
+  function renderDistCustomers(){
+    var tab = customersTab;
+    var tabs = [['all','全部'],['dealed','已成交'],['following','报备中'],['invalid','报备失效']];
+    var html = '<div class="tabs" style="margin-bottom:12px">'+tabs.map(function(t){
+      return '<button class="tab'+(tab===t[0]?' active':'')+'" data-ctab="'+t[0]+'">'+t[1]+'</button>';
+    }).join('')+'</div>';
+    // 只展示已生效客户（报备中/已成交/报备失效），待审核/已驳回在「报备审核」页
+    var effective = distReports.filter(function(r){ return r.status==='following' || r.status==='dealed' || r.status==='invalid'; });
+    var filtered = effective.filter(function(r){
+      if(tab==='all') return true;
+      return r.status===tab;
+    });
+    if(filtered.length===0){
+      html += '<div class="dist-empty"><div class="e-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-3h16l1 3"/><path d="M4 9h16v10H4z"/><path d="M8 9v10"/></svg></div><b>暂无客户</b><p>当前分类下没有客户</p></div>';
+    }else{
+      html += '<div class="dist-sec">'+filtered.map(function(r){
+        var prot = (r.status==='following' && r.protectEnd) ? '<span style="display:block;font-size:11px;color:var(--gold-deep);margin-top:2px">保护期至 '+r.protectEnd+'</span>' : '';
+        var batch = (r.status==='dealed' && r.batches && r.batches.length) ? '<span style="display:block;font-size:11px;color:var(--faint);margin-top:2px">成交 '+r.batches.length+' 个批次</span>' : '';
+        return '<div class="dist-row" data-cust="'+esc(r.creditCode)+'" style="cursor:pointer"><span class="k">'+esc(r.enterprise)+'<span style="display:block;font-size:11px;color:var(--faint)">'+esc(r.time)+'</span>'+prot+batch+'</span><span class="v">'+distStatusBadge(r.status)+'</span></div>';
+      }).join('')+'</div>';
+    }
+    $('distCustomersBody').innerHTML = html;
+  }
+
+  // 客户详情：基本信息 + 跟进信息（分状态）
+  var detailCustomer = null;
+  function findCustomerByCode(code){ return distReports.find(function(r){ return r.creditCode===code; }); }
+  function ensureFollowups(r){
+    if(!r.followups){
+      if(r.status==='dealed'){
+        r.followups = [
+          {time:'2026-10-26 10:30', text:'电话沟通，客户确认采购意向', img:null},
+          {time:'2026-10-28 15:00', text:'发送报价方案，客户反馈审批中', img:null}
+        ];
+      }else if(r.status==='following'){
+        r.followups = [
+          {time:r.time, text:'首次联系客户，建立沟通', img:null}
+        ];
+      }else if(r.status==='invalid'){
+        r.followups = [];
+      }else{
+        r.followups = [];
+      }
+    }
+    return r.followups;
+  }
+
+  function renderDistCustomerDetail(code){
+    var r = findCustomerByCode(code);
+    if(!r) return;
+    detailCustomer = r;
+    ensureFollowups(r);
+    var html = '';
+    // 基本信息（通用）
+    html += '<div class="df-card" style="margin-bottom:14px"><div class="sec-title" style="margin-bottom:8px">基本信息</div>'+
+      '<div class="dist-row"><span class="k">客户企业</span><span class="v">'+esc(r.enterprise)+'</span></div>'+
+      '<div class="dist-row"><span class="k">统一社会信用代码</span><span class="v mono" style="font-size:12px">'+esc(r.creditCode)+'</span></div>'+
+      '<div class="dist-row"><span class="k">联系人</span><span class="v">'+esc(r.contact||'—')+'</span></div>'+
+      '<div class="dist-row"><span class="k">联系电话</span><span class="v">'+esc(r.phone||'—')+'</span></div>'+
+      '<div class="dist-row"><span class="k">意向金额</span><span class="v">'+moneyText(r.budget||0)+'</span></div>'+
+      '<div class="dist-row"><span class="k">报备时间</span><span class="v">'+r.time+'</span></div>'+
+      '<div class="dist-row"><span class="k">状态</span><span class="v">'+distStatusBadge(r.status)+'</span></div>'+
+      (r.protectEnd ? '<div class="dist-row"><span class="k">保护期至</span><span class="v">'+r.protectEnd+'</span></div>' : '')+
+    '</div>';
+    // 跟进信息（分状态）
+    html += '<div class="df-card"><div class="sec-title" style="margin-bottom:8px">跟进信息</div>';
+    if(r.status==='following'){
+      // 报备中：展示跟进记录 + 添加跟进（图文）
+      if(r.followups.length===0){
+        html += '<div class="dist-empty" style="padding:20px"><b>暂无跟进记录</b><p>点击下方按钮添加跟进</p></div>';
+      }else{
+        html += r.followups.map(function(f, i){
+          return '<div class="fu-item"><div class="fu-head"><span class="fu-time">'+esc(f.time)+'</span><span class="fu-del" data-fu-del="'+i+'">删除</span></div>'+
+            (f.img ? '<div class="fu-img" style="background:'+esc(f.img)+'">图片</div>' : '')+
+            '<div class="fu-text">'+esc(f.text)+'</div></div>';
+        }).join('');
+      }
+      html += '<div class="fu-add"><textarea id="fuText" placeholder="填写跟进内容（文字）"></textarea>'+
+        '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-ghost" id="fuAddImg" style="flex:1">＋ 添加图片</button><button class="btn btn-primary" id="fuSubmit" style="flex:1">添加跟进</button></div></div>';
+    }else if(r.status==='dealed'){
+      // 已成交：展示所有跟进记录 + 成交记录
+      if(r.followups.length===0){
+        html += '<div class="dist-empty" style="padding:20px"><b>暂无跟进记录</b></div>';
+      }else{
+        html += r.followups.map(function(f){
+          return '<div class="fu-item"><div class="fu-head"><span class="fu-time">'+esc(f.time)+'</span></div>'+
+            (f.img ? '<div class="fu-img" style="background:'+esc(f.img)+'">图片</div>' : '')+
+            '<div class="fu-text">'+esc(f.text)+'</div></div>';
+        }).join('');
+      }
+      // 成交记录
+      html += '<div class="sec-title" style="margin:14px 0 8px">成交记录<span style="color:var(--faint)">'+((r.batches&&r.batches.length)||0)+' 笔</span></div>';
+      if(r.batches && r.batches.length){
+        html += r.batches.map(function(b){
+          return '<div class="deal-item"><div class="deal-row"><span class="k">成交时间</span><span class="v">'+(r.dealTime||'—')+'</span></div>'+
+            '<div class="deal-row"><span class="k">礼品卡批次号</span><span class="v mono">'+esc(b.batchNo)+'</span></div>'+
+            '<div class="deal-row"><span class="k">客户实际支付金额</span><span class="v">'+moneyText(b.payTotal||0)+'</span></div></div>';
+        }).join('');
+      }else{
+        html += '<div class="dist-empty" style="padding:20px"><b>暂无成交记录</b></div>';
+      }
+    }else{
+      // 报备失效：展示跟进记录（如有）
+      if(r.followups.length===0){
+        html += '<div class="dist-empty" style="padding:20px"><b>暂无跟进记录</b></div>';
+      }else{
+        html += r.followups.map(function(f){
+          return '<div class="fu-item"><div class="fu-head"><span class="fu-time">'+esc(f.time)+'</span></div>'+
+            (f.img ? '<div class="fu-img" style="background:'+esc(f.img)+'">图片</div>' : '')+
+            '<div class="fu-text">'+esc(f.text)+'</div></div>';
+        }).join('');
+      }
+    }
+    html += '</div>';
+    $('distCustomerDetailBody').innerHTML = html;
+
+    // 报备中：绑定添加跟进事件
+    if(r.status==='following'){
+      $('fuSubmit').addEventListener('click', function(){
+        var txt = $('fuText').value.trim();
+        if(!txt){ toast('请填写跟进内容'); return; }
+        r.followups.push({time:nowTime(), text:txt, img:null});
+        toast('跟进记录已添加');
+        renderDistCustomerDetail(code);
+      });
+      $('fuAddImg').addEventListener('click', function(){
+        // 模拟添加图片（渐变占位）
+        var colors = ['linear-gradient(135deg,#E8502F,#E9A23B)','linear-gradient(135deg,#C77F1D,#F0C46A)','linear-gradient(135deg,#3E9B63,#8FCFA8)','linear-gradient(135deg,#5B4637,#C7A06A)'];
+        r.followups.push({time:nowTime(), text:'（图片）', img:colors[Math.floor(Math.random()*colors.length)]});
+        toast('图片已添加');
+        renderDistCustomerDetail(code);
+      });
+      var delBtns = document.querySelectorAll('[data-fu-del]');
+      delBtns.forEach(function(b){
+        b.addEventListener('click', function(){
+          var i = parseInt(b.dataset.fuDel,10);
+          r.followups.splice(i,1);
+          renderDistCustomerDetail(code);
+        });
+      });
+    }
+  }
+
+  function moneyText(n){ return '¥' + Number(n).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function renderDistReportAudit(){
+    var tab = reportAuditTab;
+    var tabs = [['all','全部'],['pending','待审核'],['rejected','已驳回']];
+    var html = '<button class="btn btn-primary" id="raGoReport" style="margin-bottom:12px">＋ 报备客户</button>';
+    html += '<div class="tabs" style="margin-bottom:12px">'+tabs.map(function(t){
+      return '<button class="tab'+(tab===t[0]?' active':'')+'" data-ratab="'+t[0]+'">'+t[1]+'</button>';
+    }).join('')+'</div>';
+    var auditList = distReports.filter(function(r){ return r.status==='pending' || r.status==='rejected'; });
+    var filtered = auditList.filter(function(r){
+      if(tab==='all') return true;
+      return r.status===tab;
+    });
+    if(filtered.length===0){
+      html += '<div class="dist-empty"><div class="e-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-3h16l1 3"/><path d="M4 9h16v10H4z"/><path d="M8 9v10"/></svg></div><b>暂无报备审核记录</b><p>当前分类下没有报备</p></div>';
+    }else{
+      html += '<div class="dist-sec"><div class="ds-title">报备审核<span>'+auditList.length+' 条</span></div>'+filtered.map(function(r){
+        var reason = (r.status==='rejected' && r.rejectReason) ? '<span style="display:block;font-size:11px;color:var(--coral-deep);margin-top:2px">驳回原因：'+esc(r.rejectReason)+'</span>' : '';
+        return '<div class="dist-row"><span class="k">'+esc(r.enterprise)+'<span style="display:block;font-size:11px;color:var(--faint)">'+esc(r.time)+'</span>'+reason+'</span><span class="v">'+distStatusBadge(r.status)+'</span></div>';
+      }).join('')+'</div>';
+    }
+    $('distReportAuditBody').innerHTML = html;
+    var goBtn = $('raGoReport');
+    if(goBtn){ goBtn.addEventListener('click', function(){ distNav('scr-dist-report'); }); }
+  }
+
+  function renderDistCommission(){
+    var total = distCommissionTotal();
+    var list = distCommissions.map(function(c){
+      return '<div class="comm-item"><div class="ci-left"><span class="ci-no">'+esc(c.batchNo)+'</span><span class="ci-ent">'+esc(c.enterprise)+'</span></div>'+
+        '<div style="text-align:right"><div class="ci-amt">+¥'+c.amount.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div><div class="ci-rate">支付总额 ¥'+c.payTotal.toLocaleString()+' · 比例 '+(c.rate*100).toFixed(0)+'%</div></div></div>';
+    }).join('');
+    $('distCommissionBody').innerHTML =
+      '<div class="wd-balance" style="margin-bottom:14px"><span>累计提成（元）</span><b>'+total.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})+'</b><small>按礼品卡批次「客户实际支付金额」计佣</small></div>'+
+      '<div class="dist-sec"><div class="ds-title">佣金明细<span>'+distCommissions.length+' 笔</span></div>'+
+      (list || '<div class="dist-empty"><b>暂无佣金</b><p>成交关联礼品卡批次后生成佣金</p></div>')+
+      '</div>';
+  }
+
+  function renderDistWithdraw(){
+    var bal = distBalance();
+    var list = distWithdrawals.map(function(w){
+      var st = {pending:'<span class="dst dst-follow">待审核</span>', paid:'<span class="dst dst-deal">已到账</span>', rejected:'<span class="dst dst-invalid">已驳回</span>'}[w.status];
+      return '<div class="dist-row"><span class="k">'+w.no+'<span style="display:block;font-size:11px;color:var(--faint)">'+w.time+'</span></span><span class="v" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">-¥'+w.amount.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})+st+'</span></div>';
+    }).join('');
+    $('distWithdrawBody').innerHTML =
+      '<div class="wd-balance" style="margin-bottom:14px"><span>可提现余额（元）</span><b>'+bal.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})+'</b><small>累计提成 − 已提现 − 提现中</small></div>'+
+      '<div class="df-card" style="margin-bottom:14px"><div class="sec-title" style="margin-bottom:16px">发起提现</div>'+
+      '<div class="dist-row"><span class="k">到账银行卡</span><span class="v">'+esc(distUser.bank)+' 尾号 '+distUser.bankCard.slice(-4)+'</span></div>'+
+      '<div class="df-field" style="margin-top:14px"><label>提现金额 <span class="req">*</span> <span class="hint">最低 ¥100 · 单笔上限 ¥50,000</span></label><input id="dwdAmount" type="number" placeholder="请输入提现金额"></div>'+
+      '<button class="btn btn-primary" id="dwdSubmit">提交提现申请</button></div>'+
+      '<div class="dist-sec"><div class="ds-title">提现记录<span>'+distWithdrawals.length+' 笔</span></div>'+
+      (list || '<div class="dist-row"><span class="k">暂无提现记录</span></div>')+
+      '</div>';
+    $('dwdSubmit').addEventListener('click', function(){
+      var amt = parseFloat($('dwdAmount').value);
+      if(!amt || amt<100){ toast('提现金额需 ≥ ¥100'); return; }
+      if(amt>50000){ toast('单笔提现不得超过 ¥50,000'); return; }
+      if(amt>bal){ toast('提现金额超过可提现余额'); return; }
+      distWithdrawals.unshift({no:'WD'+Date.now(), amount:amt, status:'pending', time:nowTime()});
+      toast('提现申请已提交，等待审核');
+      renderDistWithdraw();
+    });
+  }
+
+  function renderDistProfile(){
+    $('distProfileBody').innerHTML =
+      '<div class="df-card" style="margin-bottom:14px"><div class="sec-title" style="margin-bottom:16px">实名信息</div>'+
+      '<div class="df-field"><label>姓名 <span class="req">*</span></label><input id="dpfName" value="'+esc(distUser.name)+'"></div>'+
+      '<div class="df-field"><label>身份证号码 <span class="req">*</span></label><input id="dpfIdCard" value="'+esc(distUser.idCard)+'" maxlength="18"></div></div>'+
+      '<div class="df-card"><div class="sec-title" style="margin-bottom:16px">收款银行卡</div>'+
+      '<div class="df-field"><label>银行卡号 <span class="req">*</span></label><input id="dpfBankCard" value="'+esc(distUser.bankCard)+'"></div>'+
+      '<div class="df-field"><label>开户行 <span class="req">*</span></label><input id="dpfBank" value="'+esc(distUser.bank)+'"></div>'+
+      '<div class="df-field"><label>开户名 <span class="req">*</span></label><input id="dpfBankHolder" value="'+esc(distUser.bankHolder)+'"></div>'+
+      '<button class="btn btn-primary" id="dpfSave">保存</button></div>';
+    $('dpfSave').addEventListener('click', function(){
+      distUser.name = $('dpfName').value.trim() || distUser.name;
+      distUser.idCard = $('dpfIdCard').value.trim() || distUser.idCard;
+      distUser.bank = $('dpfBank').value.trim() || distUser.bank;
+      distUser.bankCard = $('dpfBankCard').value.trim() || distUser.bankCard;
+      distUser.bankHolder = $('dpfBankHolder').value.trim() || distUser.bankHolder;
+      toast('个人资料已保存');
+      renderDistProfile();
+    });
+  }
+
+  // 分销模块内导航（首页入口跳转，进入时按需渲染）
+  function distNav(target){
+    if(target==='scr-dist-apply') renderDistApply();
+    else if(target==='scr-dist-report') renderDistReport();
+    else if(target==='scr-dist-customers') renderDistCustomers();
+    else if(target==='scr-dist-report-audit') renderDistReportAudit();
+    else if(target==='scr-dist-commission') renderDistCommission();
+    else if(target==='scr-dist-withdraw') renderDistWithdraw();
+    else if(target==='scr-dist-profile') renderDistProfile();
+    showScreen(target);
+  }
+  document.addEventListener('click', function(e){
+    var nav = e.target.closest('[data-nav]');
+    if(nav){ distNav(nav.dataset.nav); }
+  });
+
+  /* ============ 模拟审核 ============ */
+  // 模拟后台「分销员审核」：待审核 → 审核通过 / 驳回；重置回未申请
+  function goDistHome(){
+    if($('scr-dist-home').classList.contains('active')){ renderDistHome(); }
+    else { renderDistHome(); showScreen('scr-dist-home'); }
+  }
+  $('btnSimApprove').addEventListener('click', function(){
+    if(distUser.status==='pending'){
+      distUser.status='approved';
+      distUser.rejectReason='';
+      toast('已模拟审核通过，成为分销员');
+      goDistHome();
+    }else if(distUser.status==='none'){
+      toast('请先提交申请，再模拟审核通过');
+    }else if(distUser.status==='rejected'){
+      toast('该申请已被驳回，请重新申请后再审核');
+    }else{
+      toast('当前已是分销员（已通过）');
+    }
+  });
+  $('btnSimReject').addEventListener('click', function(){
+    if(distUser.status!=='pending'){ toast('当前没有待审核的申请'); return; }
+    $('simRejectReason').value='';
+    $('simRejectField').classList.remove('error');
+    $('simRejectMask').classList.add('open');
+  });
+  $('btnSimReset').addEventListener('click', function(){
+    distUser.status='none';
+    distUser.rejectReason='';
+    toast('已重置为「未申请」状态');
+    goDistHome();
+  });
+
+  // 驳回弹窗交互
+  $('simRejectClose').addEventListener('click', function(){ $('simRejectMask').classList.remove('open'); });
+  $('simRejectCancel').addEventListener('click', function(){ $('simRejectMask').classList.remove('open'); });
+  $('simRejectMask').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+  $('simRejectReason').addEventListener('input', function(){ $('simRejectField').classList.remove('error'); });
+  $('simRejectConfirm').addEventListener('click', function(){
+    var reason = $('simRejectReason').value.trim();
+    if(!reason){ $('simRejectField').classList.add('error'); return; }
+    distUser.status='rejected';
+    distUser.rejectReason=reason;
+    $('simRejectMask').classList.remove('open');
+    toast('已模拟审核驳回');
+    goDistHome();
+  });
+
+  // 分销协议弹窗交互
+  $('agreementClose').addEventListener('click', function(){ $('agreementMask').classList.remove('open'); });
+  $('agreementClose2').addEventListener('click', function(){ $('agreementMask').classList.remove('open'); });
+  $('agreementMask').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+
+  /* Toast */
+  var toastEl=$('toast'), toastTimer=null;
+  function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){ toastEl.classList.remove('show'); },2000); }
+
+  /* ============ 需求文档（按当前页面切换） ============ */
+  var mdSource='';
+  var richHtml='';
+  function getDocSource(){
+    var el = document.getElementById(screenDoc[currentScreen] || 'req-md-gift');
+    return el ? el.textContent.trim() : '';
+  }
+  function renderDoc(){
+    mdSource = getDocSource();
+    $('docBody').innerHTML = renderMd(mdSource,false);
+    richHtml = renderMd(mdSource,true);
+    var nm = document.getElementById('docCurName');
+    if(nm){ nm.textContent = '· ' + (screenNames[currentScreen] || ''); }
+  }
+  function inline(s,rich){ s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); s=s.replace(/\*\*(.+?)\*\*/g,function(_,t){return rich?'<strong style="font-weight:700;color:#2B1E16">'+t+'</strong>':'<strong>'+t+'</strong>';}); s=s.replace(/`(.+?)`/g,function(_,t){return rich?'<code style="background:#F6E7CF;border-radius:5px;padding:1px 6px;color:#C63D1F">'+t+'</code>':'<code>'+t+'</code>';}); return s; }
+  function renderMd(md,rich){
+    var lines=md.split('\n'), out=[], i=0;
+    while(i<lines.length){
+      var l=lines[i];
+      if(/^\s*\|/.test(l)){
+        var rows=[];
+        while(i<lines.length&&/^\s*\|/.test(lines[i])){ var line=lines[i].replace(/^\s*\||\|\s*$/g,''); var cells=line.split('|').map(function(c){return c.trim();}); if(!/^:?-{2,}:?$/.test(cells[0])||!/^\s*:?-+\s*:?\s*$/.test(line)){ rows.push(cells); } i++; }
+        var t='<table'+(rich?' style="width:100%;border-collapse:collapse;margin:11px 0;font-size:12px"':'')+'>', head=rows[0], body=rows.slice(1);
+        t+='<tr>'; head.forEach(function(c){ t+='<th'+(rich?' style="background:#F6E7CF;color:#2B1E16;font-weight:700;text-align:left;border:1px solid rgba(91,70,55,.22);padding:7px 9px"':'')+'>'+inline(c,rich)+'</th>'; }); t+='</tr>';
+        body.forEach(function(r){ t+='<tr>'; r.forEach(function(c){ t+='<td'+(rich?' style="border:1px solid rgba(91,70,55,.22);padding:7px 9px;vertical-align:top"':'')+'>'+inline(c,rich)+'</td>'; }); t+='</tr>'; });
+        t+='</table>'; out.push(t); continue;
+      }
+      if(/^###\s+/.test(l)){ out.push(rich?'<h3 style="font-size:14px;color:#2B1E16;margin:18px 0 8px">'+inline(l.replace(/^###\s+/,''),rich)+'</h3>':'<h3>'+inline(l.replace(/^###\s+/,''),rich)+'</h3>'); }
+      else if(/^##\s+/.test(l)){ out.push(rich?'<h2 style="font-size:15.5px;color:#2B1E16;margin:22px 0 9px;padding-left:10px;border-left:3px solid #E8502F">'+inline(l.replace(/^##\s+/,''),rich)+'</h2>':'<h2>'+inline(l.replace(/^##\s+/,''),rich)+'</h2>'); }
+      else if(/^#\s+/.test(l)){ out.push(rich?'<h1 style="font-size:19px;color:#2B1E16;margin:4px 0 14px">'+inline(l.replace(/^#\s+/,''),rich)+'</h1>':'<h1>'+inline(l.replace(/^#\s+/,''),rich)+'</h1>'); }
+      else if(/^\s*-\s+/.test(l)){ var items=[l.replace(/^\s*-\s+/,'')]; while(i+1<lines.length&&/^\s*-\s+/.test(lines[i+1])){ items.push(lines[++i].replace(/^\s*-\s+/,'')); } var ul=rich?'<ul style="margin:7px 0 7px 20px;line-height:1.85">':'<ul>'; items.forEach(function(it){ ul+='<li>'+inline(it,rich)+'</li>'; }); ul+='</ul>'; out.push(ul); }
+      else if(l.trim()===''){ }
+      else { out.push(rich?'<p style="margin:7px 0;line-height:1.85">'+inline(l,rich)+'</p>':'<p>'+inline(l,rich)+'</p>'); }
+      i++;
+    }
+    return out.join('');
+  }
+  var panel=$('docPanel'), backdrop=$('docBackdrop'), docToggle=$('docToggle');
+  function openDoc(){ renderDoc(); panel.classList.add('open'); backdrop.classList.add('open'); }
+  function closeDoc(){ panel.classList.remove('open'); backdrop.classList.remove('open'); }
+  docToggle.addEventListener('click',function(){ panel.classList.contains('open')?closeDoc():openDoc(); });
+  backdrop.addEventListener('click',closeDoc);
+  $('docClose').addEventListener('click',closeDoc);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDoc(); });
+  function copyText(txt,okMsg){
+    function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.left='-9999px'; document.body.appendChild(ta); ta.focus(); ta.select(); var ok=false; try{ok=document.execCommand('copy');}catch(err){} document.body.removeChild(ta); return ok; }
+    function done(ok){ toast(ok?okMsg:'复制失败'); }
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){done(true);},function(){done(fallback());}); } else { done(fallback()); }
+  }
+  function copyRich(html,okMsg){
+    function fallback(){ var div=document.createElement('div'); div.innerHTML=html; div.setAttribute('contenteditable','true'); div.style.position='fixed'; div.style.left='-9999px'; div.style.top='0'; document.body.appendChild(div); var range=document.createRange(); range.selectNodeContents(div); var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); var ok=false; try{ok=document.execCommand('copy');}catch(err){} sel.removeAllRanges(); document.body.removeChild(div); return ok; }
+    function done(ok){ toast(ok?okMsg:'复制失败'); }
+    if(navigator.clipboard&&window.ClipboardItem){ var item=new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([mdSource],{type:'text/plain'})}); navigator.clipboard.write([item]).then(function(){done(true);},function(){done(fallback());}); } else { done(fallback()); }
+  }
+  $('copyMd').addEventListener('click',function(){ copyText(mdSource,'已复制 Markdown'); });
+  $('copyRich').addEventListener('click',function(){ copyRich(richHtml,'已复制富文本'); });
+
+  /* ============ 初始化 ============ */
+  renderWallet();
+})();
+</script>
+</body>
+</html>
